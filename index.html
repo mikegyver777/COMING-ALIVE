@@ -54,6 +54,16 @@
   .hint{font-size:11px;color:#9fb2c7}
   .ok{color:#38ef7d}
   .warn{color:#ff6b6b}
+  /* print day */
+  @media print {
+    body{background:#fff;color:#000}
+    .no-print{display:none!important}
+    .panel{max-height:none!important}
+  }
+  /* error overlay */
+  #errOverlay{position:fixed;inset:0;display:none;background:rgba(0,0,0,.88);z-index:9999;color:#fff;padding:20px;overflow:auto}
+  #errOverlay .box{max-width:1000px;margin:0 auto;background:#1a1f24;border:1px solid #3b4652;border-radius:12px;padding:16px}
+  #errOverlay pre{white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -61,13 +71,17 @@
     <h1>🏆 ELITE TRAINING PLANNER</h1>
     <p class="sub">Strength • Hypertrophy • Power • Conditioning • Skill — plus Fight Camp mode</p>
     <div class="toolbar">
-      <div class="row">
+      <div class="row no-print">
         <button class="btn" id="prevBtn">‹ Prev</button>
         <button class="btn" id="todayBtn">Today</button>
         <button class="btn" id="nextBtn">Next ›</button>
+        <button class="btn ghost" id="exportBtn">⬇️ Export</button>
+        <label class="btn ghost" for="importFile" style="cursor:pointer">⬆️ Import</label>
+        <input id="importFile" type="file" accept="application/json" style="display:none">
+        <button class="btn ghost" id="hardResetBtn">🧹 Reset</button>
       </div>
       <div class="month" id="monthTitle">—</div>
-      <div class="row">
+      <div class="row no-print">
         <button class="btn" id="profileBtn">👤 Profile</button>
         <button class="btn" id="fightCampBtn">🥊 Fight Camp</button>
         <button class="btn primary" id="weeklyBtn">📊 Weekly</button>
@@ -78,7 +92,7 @@
     <div class="grid" id="calBody"></div>
   </div>
 
-  <!-- PROFILE (original + ADDED fields) -->
+  <!-- PROFILE -->
   <div class="modal" id="profileModal">
     <div class="panel">
       <div class="row" style="justify-content:space-between;margin-bottom:8px">
@@ -86,15 +100,13 @@
         <button class="btn" onclick="closeProfile()">✕ Close</button>
       </div>
       <div class="grid2">
-        <div><label>Age (y)</label><input id="pfAge" type="number" min="5" max="100"></div>
+        <div><label>Age (y)</label><input id="pfAge" type="number" min="5" max="100" inputmode="numeric"></div>
         <div><label>Sex</label><select id="pfSex"><option></option><option>Male</option><option>Female</option></select></div>
-        <div><label>Height (in)</label><input id="pfHt" type="number" step="0.1"></div>
-        <div><label>Weight (lb)</label><input id="pfWt" type="number" step="0.1"></div>
-        <div><label>Training Age (y)</label><input id="pfTA" type="number" step="0.1"></div>
-        <div><label>Resting HR (bpm)</label><input id="pfRHR" type="number"></div>
-        <div><label>Max HR (bpm) <span class="muted sm">auto</span></label><input id="pfMHR" type="number" placeholder="auto from age"></div>
-
-        <!-- ADDED: Fitness level + MHR model -->
+        <div><label>Height (in)</label><input id="pfHt" type="number" step="0.1" inputmode="decimal"></div>
+        <div><label>Weight (lb)</label><input id="pfWt" type="number" step="0.1" inputmode="decimal"></div>
+        <div><label>Training Age (y)</label><input id="pfTA" type="number" step="0.1" inputmode="decimal"></div>
+        <div><label>Resting HR (bpm)</label><input id="pfRHR" type="number" inputmode="numeric"></div>
+        <div><label>Max HR (bpm) <span class="muted sm">auto</span></label><input id="pfMHR" type="number" placeholder="auto from age" inputmode="numeric"></div>
         <div><label>Fitness Level</label>
           <select id="pfLevel">
             <option value="">Choose…</option><option>Beginner</option><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option>
@@ -109,7 +121,6 @@
             <option value="gulati">Gulati (women): 206 − 0.88×age</option>
           </select>
         </div>
-
         <div><label>Primary Focus</label>
           <select id="pfSport">
             <option value="">Choose...</option>
@@ -138,7 +149,7 @@
             <option>Technical → Strength → Conditioning → Power</option>
           </select>
         </div>
-        <div><label>Weekly Availability (days)</label><input id="pfAvail" type="number" min="1" max="14"></div>
+        <div><label>Weekly Availability (days)</label><input id="pfAvail" type="number" min="1" max="14" inputmode="numeric"></div>
       </div>
       <div class="muted sm" style="margin-top:10px">
         Zones: HRR when Resting HR present; else %Max. MHR auto uses model selection above.
@@ -149,12 +160,15 @@
     </div>
   </div>
 
-  <!-- DAY MODAL (original + ADDED HR Session + Auto-Prescription) -->
+  <!-- DAY MODAL -->
   <div class="modal" id="dayModal">
-    <div class="panel">
+    <div class="panel" id="dayPanel">
       <div class="row" style="justify-content:space-between;margin-bottom:8px">
         <div class="pill" id="dayTitle">—</div>
-        <button class="btn" onclick="closeDay()">✕ Close</button>
+        <div class="row no-print">
+          <button class="btn ghost" onclick="printDay()">🖨 Print Day</button>
+          <button class="btn" onclick="closeDay()">✕ Close</button>
+        </div>
       </div>
 
       <div class="row">
@@ -178,7 +192,7 @@
         </div>
       </div>
 
-      <!-- ADDED: HR SESSION universally available -->
+      <!-- HR SESSION -->
       <div class="sec" id="secHR">
         <div class="hd">🫀 Session Heart-Rate (for ANY training)</div>
         <div class="bd grid2">
@@ -246,7 +260,7 @@
             <div id="roundBlock"><label>Rounds</label><input id="bikeRounds" type="number" value="6" min="1"></div>
             <div id="workBlock"><label>Work (s)</label><input id="bikeWork" type="number" value="20"></div>
             <div id="restBlock"><label>Rest (s)</label><input id="bikeRest" type="number" value="100"></div>
-            <div><label>Target HR</label><input id="bikeTarget" type="text" placeholder="auto % and BPM"></div>
+            <div><label>Target HR</label><input id="bikeTarget" type="text" placeholder="auto % and BPM" readonly></div>
           </div>
           <div class="sec" style="margin-top:10px">
             <div class="hd">Rounds / Reps</div>
@@ -299,11 +313,11 @@
         </div>
       </div>
 
-      <!-- ADDED: Auto-Prescription (Option A) -->
+      <!-- Auto-Prescription -->
       <div class="sec" id="secPrescription">
-        <div class="hd">🤖 Auto-Prescription (Option A for Fight Camp)</div>
+        <div class="hd">🤖 Auto-Prescription (Fight Camp / Hybrid)</div>
         <div class="bd">
-          <div class="hint">If you logged a skill block + HR above, click “Compute Plan.” This uses today’s HR load + recent ACWR to recommend whether to add Strength / Power / Conditioning / Recovery—or do nothing.</div>
+          <div class="hint">Log a skill block + HR above, then “Compute Plan.” Uses today HR-load + ACWR to recommend domains.</div>
           <div class="row" style="margin:8px 0">
             <button class="btn" onclick="computePrescription()">⚙️ Compute Plan</button>
             <button class="btn ghost" onclick="applyPrescription()">📌 Apply Plan (toggle sections)</button>
@@ -321,7 +335,7 @@
     </div>
   </div>
 
-  <!-- FIGHT CAMP (unchanged structure, note: we respect your functions) -->
+  <!-- FIGHT CAMP -->
   <div class="modal" id="campModal">
     <div class="panel">
       <div class="row" style="justify-content:space-between">
@@ -330,7 +344,6 @@
       </div>
       <div class="sec"><div class="hd">Camp Setup</div>
         <div class="bd grid2">
-          <!-- allow any positive week count, your saveCamp untouched -->
           <div><label>Camp length (weeks)</label><input id="fcLen" type="number" min="1" max="52" value="8"></div>
           <div><label>Current week</label><input id="fcWeek" type="number" min="1" value="1"></div>
           <div><label>Camp priority (order of emphasis)</label>
@@ -401,7 +414,7 @@
     </div>
   </div>
 
-  <!-- Exercise Library (unchanged) -->
+  <!-- Exercise Library -->
   <div class="modal" id="libModal">
     <div class="panel">
       <div class="row" style="justify-content:space-between;margin-bottom:8px">
@@ -435,476 +448,512 @@
     </div>
   </div>
 
+  <!-- Error overlay -->
+  <div id="errOverlay" class="no-print">
+    <div class="box">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="pill">⚠️ Script Error</div>
+        <button class="btn" onclick="hideErr()">Close</button>
+      </div>
+      <pre id="errText">—</pre>
+    </div>
+  </div>
+
 <script>
-  // ===== ORIGINAL HELPERS (unchanged) =====
-  const fmt=(n)=>Number(n||0);
-  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-  const LS={get(k,def){try{return JSON.parse(localStorage.getItem(k))??def}catch(_){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
+/* ========= CORE HELPERS ========= */
+const fmt=(n)=>Number(n||0);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const LS={get(k,def){try{return JSON.parse(localStorage.getItem(k))??def}catch(_){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
 
-  // ===== ADDED: Max HR models (best-practice selector) =====
-  function mhrFromModel(age, sex, model){
-    const a = fmt(age||0);
-    const s = (sex||'').toLowerCase();
-    const pick = (model==='auto')
-      ? (s==='female' ? 'gulati' : 'nes') // pragmatic: Gulati for women, Nes for men
-      : model;
-
-    switch(pick){
-      case 'tanaka': return Math.round(208 - 0.7*a);
-      case 'nes': return Math.round(211 - 0.64*a);
-      case 'gellish': return Math.round(206.9 - 0.67*a);
-      case 'gulati': return Math.round(206 - 0.88*a);
-      default: return Math.round(211 - 0.64*a);
-    }
-  }
-
-  function calcZones(profile){
-    const age=fmt(profile.age), rhr=fmt(profile.rhr)||null;
-    const model = profile.mhrModel || 'auto';
-    const sex = profile.sex || '';
-    const mhr = fmt(profile.mhr) || mhrFromModel(age, sex, model) || 190;
-    const useKarv = !!rhr && mhr>rhr;
-    function zone(pLo,pHi){
-      if(useKarv){
-        const lo=Math.round(((mhr-rhr)*pLo+rhr));
-        const hi=Math.round(((mhr-rhr)*pHi+rhr));
-        return [lo,hi];
-      } else {
-        return [Math.round(mhr*pLo),Math.round(mhr*pHi)];
-      }
-    }
-    return {
-      mhr,
-      z1:zone(0.50,0.60), z2:zone(0.60,0.70), z3:zone(0.70,0.80), z4:zone(0.80,0.90), z5:zone(0.90,1.00),
-      type:(useKarv?'HRR':'%Max')
-    };
-  }
-
-  function renderZoneChips(){
-    const p=LS.get('elite_profile',null);
-    const wrap=document.getElementById('zoneChips');
-    if(!p){ wrap.innerHTML=''; return; }
-    const z=calcZones(p);
-    wrap.innerHTML = `
-      <span class="chip">MaxHR: ${z.mhr} (${z.type})</span>
-      <span class="chip">Z1 ${z.z1[0]}–${z.z1[1]} bpm</span>
-      <span class="chip">Z2 ${z.z2[0]}–${z.z2[1]} bpm</span>
-      <span class="chip">Z3 ${z.z3[0]}–${z.z3[1]} bpm</span>
-      <span class="chip">Z4 ${z.z4[0]}–${z.z4[1]} bpm</span>
-      <span class="chip">Z5 ${z.z5[0]}–${z.z5[1]} bpm</span>`;
-  }
-
-  const head=document.getElementById('calHead'); const body=document.getElementById('calBody');
-  const monthTitle=document.getElementById('monthTitle');
-  const DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'];
-  let cur=new Date(); let store=LS.get('elite_days',{}); let hist=LS.get('elite_tss',[]);
-
-  function renderCal(){
-    head.innerHTML=''; body.innerHTML='';
-    DOW.forEach(d=>{const el=document.createElement('div'); el.className='dow'; el.textContent=d; head.appendChild(el)});
-    const y=cur.getFullYear(), m=cur.getMonth();
-    monthTitle.textContent=cur.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-    const first=new Date(y,m,1).getDay(); const days=new Date(y,m+1,0).getDate(); const prevDays=new Date(y,m,0).getDate();
-    const todayStr = toKey(new Date());
-    for(let i=first-1;i>=0;i--){const d=prevDays-i; body.appendChild(dayCell(new Date(y,m-1,d),true,todayStr))}
-    for(let d=1;d<=days;d++){body.appendChild(dayCell(new Date(y,m,d),false,todayStr))}
-    const total=first+days; const rem=(total<=35?35-total:42-total);
-    for(let d=1;d<=rem;d++){body.appendChild(dayCell(new Date(y,m+1,d),true,todayStr))}
-  }
-  function dayCell(date,other,todayStr){
-    const el=document.createElement('div'); el.className='cell'+(other?' other':'');
-    const key=toKey(date); if(key===todayStr) el.classList.add('today');
-    const num=document.createElement('div'); num.className='num'; num.textContent=date.getDate(); el.appendChild(num);
-    const day=store[key];
-    if(day?.modalities){
-      Object.keys(day.modalities).forEach(k=>{const b=document.createElement('span'); b.className='badge'; b.textContent=k.toUpperCase(); el.appendChild(b);});
-      const c=document.createElement('div');
-      c.className='cns '+(day.totalCNS<60?'low':day.totalCNS<75?'mod':'high'); el.appendChild(c);
-    }
-    el.onclick=()=>openDay(date);
-    return el;
-  }
-  function toKey(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`}
-  document.getElementById('prevBtn').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()}
-  document.getElementById('nextBtn').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()}
-  document.getElementById('todayBtn').onclick=()=>{cur=new Date();renderCal()}
-
-  const profileModal=document.getElementById('profileModal');
-  const pfAge=document.getElementById('pfAge'); const pfSex=document.getElementById('pfSex'); const pfHt=document.getElementById('pfHt'); const pfWt=document.getElementById('pfWt');
-  const pfTA=document.getElementById('pfTA'); const pfRHR=document.getElementById('pfRHR'); const pfMHR=document.getElementById('pfMHR'); const pfSport=document.getElementById('pfSport');
-  const pfPriority=document.getElementById('pfPriority'); const pfAvail=document.getElementById('pfAvail');
-  const pfLevel=document.getElementById('pfLevel'); const pfMHRModel=document.getElementById('pfMHRModel');
-
-  document.getElementById('profileBtn').onclick=()=>{
-    const p=LS.get('elite_profile',{});
-    pfAge.value=p.age||''; pfSex.value=p.sex||''; pfHt.value=p.ht||''; pfWt.value=p.wt||'';
-    pfTA.value=p.ta||''; pfRHR.value=p.rhr||''; pfMHR.value=p.mhr||'';
-    pfSport.value=p.sport||''; pfPriority.value=p.priority||'Balanced (All domains equally)'; pfAvail.value=p.avail||'';
-    pfLevel.value=p.level||''; pfMHRModel.value=p.mhrModel||'auto';
-    profileModal.classList.add('show');
+/* ========= ERROR GUARD (prevents black screen) ========= */
+(function harden(){
+  window.onerror = function(msg, src, line, col, err){
+    showErr('Error: '+msg+'\nSource: '+src+'\nLine:'+line+' Col:'+col+'\n'+(err&&err.stack||''));
+    return true;
   };
-  function closeProfile(){profileModal.classList.remove('show')}
-  function saveProfile(){
-    const p={
-      age:fmt(pfAge.value),sex:pfSex.value,ht:fmt(pfHt.value),wt:fmt(pfWt.value),
-      ta:fmt(pfTA.value), rhr:fmt(pfRHR.value), mhr:fmt(pfMHR.value),
-      sport:pfSport.value, priority:pfPriority.value, avail:fmt(pfAvail.value),
-      level: pfLevel.value, mhrModel: pfMHRModel.value
-    };
-    if(!p.mhr && p.age) p.mhr = mhrFromModel(p.age,p.sex,p.mhrModel);
-    LS.set('elite_profile',p); renderZoneChips(); profileModal.classList.remove('show');
-  }
+  window.onunhandledrejection = function(e){
+    showErr('Unhandled Promise Rejection:\n'+(e&&e.reason&&e.reason.stack || JSON.stringify(e)));
+    return true;
+  };
+})();
+function showErr(txt){ const ov=document.getElementById('errOverlay'); const t=document.getElementById('errText'); if(ov&&t){ t.textContent=String(txt||''); ov.style.display='block'; } }
+function hideErr(){ const ov=document.getElementById('errOverlay'); if(ov) ov.style.display='none'; }
 
-  let curKey=null; const dayModal=document.getElementById('dayModal');
-  function openDay(date){
-    curKey=toKey(date);
-    document.getElementById('dayTitle').textContent=date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-    ['mChest','mBack','mLegs','mTrack','mBike','mBJJ','mWalk'].forEach(id=>document.getElementById(id).checked=false);
-    ['secChest','secBack','secLegs','secTrack','secBike','secBJJ','secWalk'].forEach(id=>document.getElementById(id).style.display='none');
-    initStrength('chestBox'); initStrength('backBox'); initStrength('legsBox');
-    attachLibButton('chestBox'); attachLibButton('backBox'); attachLibButton('legsBox');
-    document.getElementById('trackExercises').innerHTML=''; resetBikeUI(); resetBJJ(); resetWalk();
-    resetHRInputs(); // ADDED
-    setKPIs({totalCNS:0,tss:0,totalVolume:0});
-    const saved=store[curKey]; if(saved){ setKPIs(saved); loadHRFromStore(saved); }
-    dayModal.classList.add('show');
+/* ========= HR MODELS + ZONES ========= */
+function mhrFromModel(age, sex, model){
+  const a = fmt(age||0);
+  const s = (sex||'').toLowerCase();
+  const pick = (model==='auto')
+    ? (s==='female' ? 'gulati' : 'nes')
+    : model;
+  switch(pick){
+    case 'tanaka': return Math.round(208 - 0.7*a);
+    case 'nes': return Math.round(211 - 0.64*a);
+    case 'gellish': return Math.round(206.9 - 0.67*a);
+    case 'gulati': return Math.round(206 - 0.88*a);
+    default: return Math.round(211 - 0.64*a);
   }
-  function setKPIs(d){
-    document.getElementById('kpiCNS').textContent=Math.round(d.totalCNS||0);
-    document.getElementById('kpiTSS').textContent=Math.round(d.tss||0);
-    document.getElementById('kpiVOL').textContent=Math.round(d.totalVolume||0);
+}
+function calcZones(profile){
+  const age=fmt(profile.age), rhr=fmt(profile.rhr)||null;
+  const model = profile.mhrModel || 'auto';
+  const sex = profile.sex || '';
+  const mhr = fmt(profile.mhr) || mhrFromModel(age, sex, model) || 190;
+  const useKarv = !!rhr && mhr>rhr;
+  function zone(pLo,pHi){
+    if(useKarv){
+      const lo=Math.round(((mhr-rhr)*pLo+rhr));
+      const hi=Math.round(((mhr-rhr)*pHi+rhr));
+      return [lo,hi];
+    } else {
+      return [Math.round(mhr*pLo),Math.round(mhr*pHi)];
+    }
   }
-  function closeDay(){dayModal.classList.remove('show')}
-  function toggleSection(id){const el=document.getElementById(id); el.style.display=(el.style.display==='none'?'block':'none')}
+  return {
+    mhr,
+    z1:zone(0.50,0.60), z2:zone(0.60,0.70), z3:zone(0.70,0.80), z4:zone(0.80,0.90), z5:zone(0.90,1.00),
+    type:(useKarv?'HRR':'%Max')
+  };
+}
+function renderZoneChips(){
+  const p=LS.get('elite_profile',null);
+  const wrap=document.getElementById('zoneChips');
+  if(!p){ wrap.innerHTML=''; return; }
+  const z=calcZones(p);
+  wrap.innerHTML = `
+    <span class="chip">MaxHR: ${z.mhr} (${z.type})</span>
+    <span class="chip">Z1 ${z.z1[0]}–${z.z1[1]} bpm</span>
+    <span class="chip">Z2 ${z.z2[0]}–${z.z2[1]} bpm</span>
+    <span class="chip">Z3 ${z.z3[0]}–${z.z3[1]} bpm</span>
+    <span class="chip">Z4 ${z.z4[0]}–${z.z4[1]} bpm</span>
+    <span class="chip">Z5 ${z.z5[0]}–${z.z5[1]} bpm</span>`;
+}
 
-  // ===== ORIGINAL strength editors (unchanged) =====
-  function initStrength(targetId){
-    const box=document.getElementById(targetId);
-    box.innerHTML=`
-      <div class="row" style="margin-bottom:6px">
-        <button class="btn primary" onclick="addExercise('${targetId}')">+ Add Exercise</button>
-        <div class="muted sm">Pyramid sets light → heavy if you like. Choose muscle group for each exercise.</div>
-      </div>
-      <div id="${targetId}-list"></div>`;
+/* ========= CALENDAR ========= */
+const head=document.getElementById('calHead'); const body=document.getElementById('calBody');
+const monthTitle=document.getElementById('monthTitle');
+const DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+let cur=new Date(); let store=LS.get('elite_days',{}); let hist=LS.get('elite_tss',[]);
+
+function renderCal(){
+  head.innerHTML=''; body.innerHTML='';
+  DOW.forEach(d=>{const el=document.createElement('div'); el.className='dow'; el.textContent=d; head.appendChild(el)});
+  const y=cur.getFullYear(), m=cur.getMonth();
+  monthTitle.textContent=cur.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const first=new Date(y,m,1).getDay(); const days=new Date(y,m+1,0).getDate(); const prevDays=new Date(y,m,0).getDate();
+  const todayStr = toKey(new Date());
+  for(let i=first-1;i>=0;i--){const d=prevDays-i; body.appendChild(dayCell(new Date(y,m-1,d),true,todayStr))}
+  for(let d=1;d<=days;d++){body.appendChild(dayCell(new Date(y,m,d),false,todayStr))}
+  const total=first+days; const rem=(total<=35?35-total:42-total);
+  for(let d=1;d<=rem;d++){body.appendChild(dayCell(new Date(y,m+1,d),true,todayStr))}
+}
+function dayCell(date,other,todayStr){
+  const el=document.createElement('div'); el.className='cell'+(other?' other':'');
+  const key=toKey(date); if(key===todayStr) el.classList.add('today');
+  const num=document.createElement('div'); num.className='num'; num.textContent=date.getDate(); el.appendChild(num);
+  const day=store[key];
+  if(day?.modalities){
+    Object.keys(day.modalities).forEach(k=>{const b=document.createElement('span'); b.className='badge'; b.textContent=k.toUpperCase(); el.appendChild(b);});
+    const c=document.createElement('div');
+    c.className='cns '+(day.totalCNS<60?'low':day.totalCNS<75?'mod':'high'); el.appendChild(c);
   }
-  function addExercise(targetId){
-    const list=document.getElementById(`${targetId}-list`);
-    const idx=list.children.length+1;
-    const ex=document.createElement('div');
-    ex.className='sec'; ex.innerHTML=`
-      <div class="hd">
-        <span>Exercise ${idx}</span>
-        <button class="btn ghost" onclick="this.closest('.sec').remove()">🗑 Delete Exercise</button>
-      </div>
-      <div class="bd">
-        <div class="grid2" style="margin-bottom:6px">
-          <div>
-            <label>Entry type</label>
-            <select class="ex-mode" onchange="toggleExerciseMode(this)">
-              <option value="load">Load / Reps</option>
-              <option value="rounds">Rounds / Time</option>
-            </select>
-          </div>
-          <div class="muted sm">Use Rounds/Time for bag, mitts, shadowboxing, clinch, etc.</div>
+  el.onclick=()=>openDay(date);
+  return el;
+}
+function toKey(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`}
+document.getElementById('prevBtn').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()}
+document.getElementById('nextBtn').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()}
+document.getElementById('todayBtn').onclick=()=>{cur=new Date();renderCal()}
+
+/* ========= PROFILE ========= */
+const profileModal=document.getElementById('profileModal');
+const pfAge=document.getElementById('pfAge'); const pfSex=document.getElementById('pfSex'); const pfHt=document.getElementById('pfHt'); const pfWt=document.getElementById('pfWt');
+const pfTA=document.getElementById('pfTA'); const pfRHR=document.getElementById('pfRHR'); const pfMHR=document.getElementById('pfMHR'); const pfSport=document.getElementById('pfSport');
+const pfPriority=document.getElementById('pfPriority'); const pfAvail=document.getElementById('pfAvail');
+const pfLevel=document.getElementById('pfLevel'); const pfMHRModel=document.getElementById('pfMHRModel');
+
+document.getElementById('profileBtn').onclick=()=>{
+  const p=LS.get('elite_profile',{});
+  pfAge.value=p.age||''; pfSex.value=p.sex||''; pfHt.value=p.ht||''; pfWt.value=p.wt||'';
+  pfTA.value=p.ta||''; pfRHR.value=p.rhr||''; pfMHR.value=p.mhr||'';
+  pfSport.value=p.sport||''; pfPriority.value=p.priority||'Balanced (All domains equally)'; pfAvail.value=p.avail||'';
+  pfLevel.value=p.level||''; pfMHRModel.value=p.mhrModel||'auto';
+  profileModal.classList.add('show');
+};
+function closeProfile(){profileModal.classList.remove('show')}
+function saveProfile(){
+  const p={
+    age:fmt(pfAge.value),sex:pfSex.value,ht:fmt(pfHt.value),wt:fmt(pfWt.value),
+    ta:fmt(pfTA.value), rhr:fmt(pfRHR.value), mhr:fmt(pfMHR.value),
+    sport:pfSport.value, priority:pfPriority.value, avail:fmt(pfAvail.value),
+    level: pfLevel.value, mhrModel: pfMHRModel.value
+  };
+  if(!p.mhr && p.age) p.mhr = mhrFromModel(p.age,p.sex,p.mhrModel);
+  LS.set('elite_profile',p); renderZoneChips(); profileModal.classList.remove('show');
+}
+
+/* ========= DAY MODAL ========= */
+let curKey=null; const dayModal=document.getElementById('dayModal');
+function openDay(date){
+  curKey=toKey(date);
+  document.getElementById('dayTitle').textContent=date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  ['mChest','mBack','mLegs','mTrack','mBike','mBJJ','mWalk'].forEach(id=>document.getElementById(id).checked=false);
+  ['secChest','secBack','secLegs','secTrack','secBike','secBJJ','secWalk'].forEach(id=>document.getElementById(id).style.display='none');
+  initStrength('chestBox'); initStrength('backBox'); initStrength('legsBox');
+  attachLibButton('chestBox'); attachLibButton('backBox'); attachLibButton('legsBox');
+  document.getElementById('trackExercises').innerHTML=''; resetBikeUI(); resetBJJ(); resetWalk();
+  resetHRInputs();
+  setKPIs({totalCNS:0,tss:0,totalVolume:0});
+  const saved=store[curKey]; if(saved){ setKPIs(saved); loadHRFromStore(saved); }
+  dayModal.classList.add('show');
+}
+function setKPIs(d){
+  document.getElementById('kpiCNS').textContent=Math.round(d.totalCNS||0);
+  document.getElementById('kpiTSS').textContent=Math.round(d.tss||0);
+  document.getElementById('kpiVOL').textContent=Math.round(d.totalVolume||0);
+}
+function closeDay(){dayModal.classList.remove('show')}
+function toggleSection(id){const el=document.getElementById(id); el.style.display=(el.style.display==='none'?'block':'none')}
+
+/* ========= Strength editors ========= */
+function initStrength(targetId){
+  const box=document.getElementById(targetId);
+  box.innerHTML=`
+    <div class="row" style="margin-bottom:6px">
+      <button class="btn primary" onclick="addExercise('${targetId}')">+ Add Exercise</button>
+      <div class="muted sm">Pyramid sets light → heavy if you like. Choose muscle group for each exercise.</div>
+    </div>
+    <div id="${targetId}-list"></div>`;
+}
+function addExercise(targetId){
+  const list=document.getElementById(`${targetId}-list`);
+  const idx=list.children.length+1;
+  const ex=document.createElement('div');
+  ex.className='sec'; ex.innerHTML=`
+    <div class="hd">
+      <span>Exercise ${idx}</span>
+      <button class="btn ghost" onclick="this.closest('.sec').remove()">🗑 Delete Exercise</button>
+    </div>
+    <div class="bd">
+      <div class="grid2" style="margin-bottom:6px">
+        <div>
+          <label>Entry type</label>
+          <select class="ex-mode" onchange="toggleExerciseMode(this)">
+            <option value="load">Load / Reps</option>
+            <option value="rounds">Rounds / Time</option>
+          </select>
         </div>
+        <div class="muted sm">Use Rounds/Time for bag, mitts, shadowboxing, clinch, etc.</div>
+      </div>
+      <div class="grid2">
+        <div><label>Name</label><input class="ex-name" placeholder="e.g., Bench Press"></div>
+        <div><label>Muscle group</label>
+          <select class="ex-muscle">
+            <option>Chest</option><option>Back</option><option>Shoulders</option><option>Biceps</option><option>Triceps</option><option>Quads</option><option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option><option>MMA</option><option>Boxing</option>
+          </select>
+        </div>
+      </div>
+      <div class="ex-strength">
+        <table class="sm" style="margin-top:8px">
+          <thead><tr><th>Set</th><th>Weight (lb)</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
+          <tbody class="setBody"></tbody>
+        </table>
+        <button class="btn" onclick="addSet(this)">+ Add Set</button>
+      </div>
+      <div class="ex-rounds" style="display:none;margin-top:8px">
         <div class="grid2">
-          <div><label>Name</label><input class="ex-name" placeholder="e.g., Bench Press"></div>
-          <div><label>Muscle group</label>
-            <select class="ex-muscle">
-              <option>Chest</option><option>Back</option><option>Shoulders</option><option>Biceps</option><option>Triceps</option><option>Quads</option><option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option><option>MMA</option><option>Boxing</option>
-            </select>
-          </div>
+          <div><label>Rounds</label><input class="rx-rounds" type="number" min="1" placeholder="e.g., 3"></div>
+          <div><label>Round duration (s)</label><input class="rx-work" type="number" min="10" step="5" placeholder="180"></div>
+          <div><label>Rest between rounds (s)</label><input class="rx-rest" type="number" min="0" step="5" placeholder="60"></div>
+          <div><label>Intensity</label><select class="rx-int"><option>Light</option><option>Medium</option><option>Hard</option><option>Max</option></select></div>
+          <div style="grid-column:1/-1"><label>Notes</label><input class="rx-notes" placeholder="e.g., 1-2-3 + slips; sprawl each minute; focus on head movement"></div>
         </div>
-        <div class="ex-strength">
-          <table class="sm" style="margin-top:8px">
-            <thead><tr><th>Set</th><th>Weight (lb)</th><th>Reps</th><th>RPE</th><th></th></tr></thead>
-            <tbody class="setBody"></tbody>
-          </table>
-          <button class="btn" onclick="addSet(this)">+ Add Set</button>
-        </div>
-        <div class="ex-rounds" style="display:none;margin-top:8px">
-          <div class="grid2">
-            <div><label>Rounds</label><input class="rx-rounds" type="number" min="1" placeholder="e.g., 3"></div>
-            <div><label>Round duration (s)</label><input class="rx-work" type="number" min="10" step="5" placeholder="180"></div>
-            <div><label>Rest between rounds (s)</label><input class="rx-rest" type="number" min="0" step="5" placeholder="60"></div>
-            <div><label>Intensity</label><select class="rx-int"><option>Light</option><option>Medium</option><option>Hard</option><option>Max</option></select></div>
-            <div style="grid-column:1/-1"><label>Notes</label><input class="rx-notes" placeholder="e.g., 1-2-3 + slips; sprawl each minute; focus on head movement"></div>
-          </div>
-        </div>
-      </div>`;
-    list.appendChild(ex);
-    const sb=ex.querySelector('.setBody');
-    [ [1,'',12,6],[2,'',8,7],[3,'',6,8] ].forEach(row=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${row[0]}</td><td><input class="w" type="number" step="0.5" value="${row[1]}"></td><td><input class="r" type="number" value="${row[2]}"></td><td><input class="p" type="number" step="0.5" value="${row[3]}"></td><td><button class="btn" onclick="this.closest('tr').remove()">🗑</button></td>`;
-      sb.appendChild(tr);
-    });
-    const grpSel = ex.querySelector('.ex-muscle');
-    grpSel && grpSel.addEventListener('change',(e)=>{ const v=(e.target.value||'').toLowerCase(); if(v==='mma'||v==='boxing'){ setExerciseMode(ex,'rounds'); } });
-  }
-  function addSet(btn){
-    const sb=btn.closest('.bd').querySelector('.setBody');
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${sb.children.length+1}</td><td><input class="w" type="number" step="0.5"></td><td><input class="r" type="number"></td><td><input class="p" type="number" step="0.5"></td><td><button class="btn" onclick="this.closest('tr').remove()">🗑</button></td>`;
-    sb.appendChild(tr);
-  }
-  function toggleExerciseMode(sel){
-    const root=sel.closest('.bd'); const mode=sel.value;
-    const strength=root.querySelector('.ex-strength'); const rounds=root.querySelector('.ex-rounds');
-    if(strength && rounds){ strength.style.display=(mode==='load'?'block':'none'); rounds.style.display=(mode==='rounds'?'block':'none'); }
-  }
-  function setExerciseMode(exCard, mode){
-    const sel=exCard.querySelector('.ex-mode'); if(sel){ sel.value=mode; toggleExerciseMode(sel); }
-  }
-
-  // ===== Track/Plyo (unchanged behavior) =====
-  function addTrackExercise(){
-    const c=document.getElementById('trackExercises'); const i=c.children.length+1;
-    const el=document.createElement('div'); el.className='sec'; el.innerHTML=`
-      <div class="hd" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Exercise #${i}</span><button class="btn" onclick="this.closest('.sec').remove()" style="padding:6px 12px">🗑 Remove</button>
       </div>
-      <div class="bd">
+    </div>`;
+  list.appendChild(ex);
+  const sb=ex.querySelector('.setBody');
+  [ [1,'',12,6],[2,'',8,7],[3,'',6,8] ].forEach(row=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${row[0]}</td><td><input class="w" type="number" step="0.5" value="${row[1]}"></td><td><input class="r" type="number" value="${row[2]}"></td><td><input class="p" type="number" step="0.5" value="${row[3]}"></td><td><button class="btn" onclick="this.closest('tr').remove()">🗑</button></td>`;
+    sb.appendChild(tr);
+  });
+  const grpSel = ex.querySelector('.ex-muscle');
+  grpSel && grpSel.addEventListener('change',(e)=>{ const v=(e.target.value||'').toLowerCase(); if(v==='mma'||v==='boxing'){ setExerciseMode(ex,'rounds'); } });
+}
+function addSet(btn){
+  const sb=btn.closest('.bd').querySelector('.setBody');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${sb.children.length+1}</td><td><input class="w" type="number" step="0.5"></td><td><input class="r" type="number"></td><td><input class="p" type="number" step="0.5"></td><td><button class="btn" onclick="this.closest('tr').remove()">🗑</button></td>`;
+  sb.appendChild(tr);
+}
+function toggleExerciseMode(sel){
+  const root=sel.closest('.bd'); const mode=sel.value;
+  const strength=root.querySelector('.ex-strength'); const rounds=root.querySelector('.ex-rounds');
+  if(strength && rounds){ strength.style.display=(mode==='load'?'block':'none'); rounds.style.display=(mode==='rounds'?'block':'none'); }
+}
+function setExerciseMode(exCard, mode){
+  const sel=exCard.querySelector('.ex-mode'); if(sel){ sel.value=mode; toggleExerciseMode(sel); }
+}
+
+/* ========= Track/Plyo ========= */
+function addTrackExercise(){
+  const c=document.getElementById('trackExercises'); const i=c.children.length+1;
+  const el=document.createElement('div'); el.className='sec'; el.innerHTML=`
+    <div class="hd" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Exercise #${i}</span><button class="btn" onclick="this.closest('.sec').remove()" style="padding:6px 12px">🗑 Remove</button>
+    </div>
+    <div class="bd">
+      <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
+        <div><label>Exercise Type</label>
+          <select class="tKind" onchange="toggleTrackTemplate(this)">
+            <option value="sprint">Sprint</option>
+            <option value="jog">Jog</option>
+            <option value="run">Run</option>
+            <option value="other">Other (plyo/stairs/etc.)</option>
+          </select>
+        </div>
+        <div><label>Exercise Name</label><input class="tName" placeholder="e.g., 150m Sprint or Single-Leg Stair Hop"></div>
+        <div>
+          <label>Quick pick (track/plyo)</label>
+          <select class="tQuick" onchange="applyTrackQuickPick(this)">
+            <option value="">— choose —</option>
+            <optgroup label="Jumps & Bounds">
+              <option>Broad Jump</option><option>Single-Leg Jump (Left)</option><option>Single-Leg Jump (Right)</option>
+              <option>Bounds (alternating)</option><option>Pogo Hops</option><option>Stair Jumps (double-leg)</option><option>Stair Hops (single-leg)</option>
+            </optgroup>
+            <optgroup label="Drills">
+              <option>A-Skips</option><option>B-Skips</option><option>High Knees</option><option>Butt Kicks</option><option>Carioca</option><option>Backpedal</option>
+            </optgroup>
+            <optgroup label="Sprints">
+              <option>Flying 30m</option><option>Flying 60m</option><option>Hill Sprint</option><option>Curve Sprint (200m bend)</option>
+            </optgroup>
+            <optgroup label="Stairs & Hills">
+              <option>Stair Run (fast)</option><option>Stair Walk (loaded)</option><option>Hill Bounds</option>
+            </optgroup>
+          </select>
+        </div>
+        <div><label>Sets</label><input class="tSets" type="number" min="1" placeholder="e.g., 4"></div>
+        <div><label>Reps</label><input class="tRepsAny" type="number" min="1" placeholder="e.g., 3"></div>
+      </div>
+
+      <div class="tRunningBlock" style="margin-top:10px">
         <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
-          <div><label>Exercise Type</label>
-            <select class="tKind" onchange="toggleTrackTemplate(this)">
-              <option value="sprint">Sprint</option>
-              <option value="jog">Jog</option>
-              <option value="run">Run</option>
-              <option value="other">Other (plyo/stairs/etc.)</option>
-            </select>
-          </div>
-          <div><label>Exercise Name</label><input class="tName" placeholder="e.g., 150m Sprint or Single-Leg Stair Hop"></div>
+          <div><label>Duration (MM:SS)</label><input class="tDur" type="text" placeholder="00:30"></div>
+          <div><label>Distance</label><input class="tDist" type="number" step="0.01" placeholder="e.g., 0.25"></div>
           <div>
-            <label>Quick pick (track/plyo)</label>
-            <select class="tQuick" onchange="applyTrackQuickPick(this)">
-              <option value="">— choose —</option>
-              <optgroup label="Jumps & Bounds">
-                <option>Broad Jump</option><option>Single-Leg Jump (Left)</option><option>Single-Leg Jump (Right)</option>
-                <option>Bounds (alternating)</option><option>Pogo Hops</option><option>Stair Jumps (double-leg)</option><option>Stair Hops (single-leg)</option>
-              </optgroup>
-              <optgroup label="Drills">
-                <option>A-Skips</option><option>B-Skips</option><option>High Knees</option><option>Butt Kicks</option><option>Carioca</option><option>Backpedal</option>
-              </optgroup>
-              <optgroup label="Sprints">
-                <option>Flying 30m</option><option>Flying 60m</option><option>Hill Sprint</option><option>Curve Sprint (200m bend)</option>
-              </optgroup>
-              <optgroup label="Stairs & Hills">
-                <option>Stair Run (fast)</option><option>Stair Walk (loaded)</option><option>Hill Bounds</option>
-              </optgroup>
+            <label>Unit</label>
+            <select class="tUnit">
+              <option value="miles">miles</option><option value="yards">yards</option><option value="meters">meters</option>
             </select>
           </div>
-          <div><label>Sets</label><input class="tSets" type="number" min="1" placeholder="e.g., 4"></div>
-          <div><label>Reps</label><input class="tRepsAny" type="number" min="1" placeholder="e.g., 3"></div>
-        </div>
-
-        <div class="tRunningBlock" style="margin-top:10px">
-          <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
-            <div><label>Duration (MM:SS)</label><input class="tDur" type="text" placeholder="00:30"></div>
-            <div><label>Distance</label><input class="tDist" type="number" step="0.01" placeholder="e.g., 0.25"></div>
-            <div>
-              <label>Unit</label>
-              <select class="tUnit">
-                <option value="miles">miles</option><option value="yards">yards</option><option value="meters">meters</option>
-              </select>
-            </div>
-            <div>
-              <label>Intensity</label>
-              <select class="tInt">
-                <option>Light</option><option>Medium</option><option>Hard</option><option>Max</option>
-              </select>
-            </div>
+          <div>
+            <label>Intensity</label>
+            <select class="tInt">
+              <option>Light</option><option>Medium</option><option>Hard</option><option>Max</option>
+            </select>
           </div>
         </div>
+      </div>
 
-        <div class="tPlyoBlock" style="display:none;margin-top:10px">
-          <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
-            <div><label>Execution</label>
-              <select class="tType" onchange="toggleUnilateral(this)">
-                <option value="bilateral">Bilateral (both legs)</option>
-                <option value="unilateral">Unilateral (single leg)</option>
-              </select>
-            </div>
-            <div class="tBilateral"><label>Reps per set</label><input class="tReps" type="number" min="1" placeholder="e.g., 34"></div>
-            <div class="tUnilateral" style="display:none">
-              <div><label>Left Reps per set</label><input class="tRepsL" type="number" min="1" placeholder="e.g., 17"></div>
-              <div><label>Right Reps per set</label><input class="tRepsR" type="number" min="1" placeholder="e.g., 17"></div>
-            </div>
+      <div class="tPlyoBlock" style="display:none;margin-top:10px">
+        <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+          <div><label>Execution</label>
+            <select class="tType" onchange="toggleUnilateral(this)">
+              <option value="bilateral">Bilateral (both legs)</option>
+              <option value="unilateral">Unilateral (single leg)</option>
+            </select>
           </div>
-          <div class="grid2" style="margin-top:10px">
-            <div><label>RPE (1-10)</label><input class="tRPE" type="number" step="0.5" min="1" max="10" placeholder="8"></div>
-            <div><label>Time (MM:SS)</label><input class="tTime" type="text" placeholder="00:30"></div>
+          <div class="tBilateral"><label>Reps per set</label><input class="tReps" type="number" min="1" placeholder="e.g., 34"></div>
+          <div class="tUnilateral" style="display:none">
+            <div><label>Left Reps per set</label><input class="tRepsL" type="number" min="1" placeholder="e.g., 17"></div>
+            <div><label>Right Reps per set</label><input class="tRepsR" type="number" min="1" placeholder="e.g., 17"></div>
           </div>
         </div>
-      </div>`;
-    c.appendChild(el);
-    toggleTrackTemplate(el.querySelector('.tKind'));
+        <div class="grid2" style="margin-top:10px">
+          <div><label>RPE (1-10)</label><input class="tRPE" type="number" step="0.5" min="1" max="10" placeholder="8"></div>
+          <div><label>Time (MM:SS)</label><input class="tTime" type="text" placeholder="00:30"></div>
+        </div>
+      </div>
+    </div>`;
+  c.appendChild(el);
+  toggleTrackTemplate(el.querySelector('.tKind'));
+}
+function toggleUnilateral(select){
+  const parent = select.closest('.bd'); const isBilateral = select.value === 'bilateral';
+  parent.querySelector('.tBilateral').style.display = isBilateral ? 'block' : 'none';
+  parent.querySelector('.tUnilateral').style.display = isBilateral ? 'none' : 'block';
+}
+function applyTrackQuickPick(sel){
+  const bd = sel.closest('.bd');
+  const name = bd.querySelector('.tName');
+  if(name){ name.value = sel.value || name.value; }
+}
+function toggleTrackTemplate(sel){
+  const bd = sel.closest('.bd');
+  const mode = sel.value;
+  const runBlk = bd.querySelector('.tRunningBlock');
+  const plyoBlk = bd.querySelector('.tPlyoBlock');
+  if(!runBlk || !plyoBlk) return;
+  if(mode==='sprint' || mode==='jog' || mode==='run'){
+    runBlk.style.display = 'block';
+    plyoBlk.style.display = 'none';
+    const name = bd.querySelector('.tName');
+    if(name && !name.value) name.value = mode[0].toUpperCase()+mode.slice(1);
+  } else {
+    runBlk.style.display = 'none';
+    plyoBlk.style.display = 'block';
   }
-  function toggleUnilateral(select){
-    const parent = select.closest('.bd'); const isBilateral = select.value === 'bilateral';
-    parent.querySelector('.tBilateral').style.display = isBilateral ? 'block' : 'none';
-    parent.querySelector('.tUnilateral').style.display = isBilateral ? 'none' : 'block';
-  }
+}
 
-  // Bike (original core behavior)
-  const bikeProto=document.getElementById('bikeProto'); const bikeRounds=document.getElementById('bikeRounds'); const bikeWork=document.getElementById('bikeWork'); const bikeRest=document.getElementById('bikeRest'); const bikeTarget=document.getElementById('bikeTarget'); const bikeELI5=document.getElementById('bikeELI5');
-  function resetBikeUI(){ if(!bikeProto) return; bikeProto.value='peak'; applyBikeUI(); const tb=document.querySelector('#bikeTable tbody'); if(tb){tb.innerHTML=''; seedBikeRows();} }
-  function seedBikeRows(){ const r=fmt(bikeRounds?.value)||6; const tb=document.querySelector('#bikeTable tbody'); if(!tb) return; tb.innerHTML=''; for(let i=1;i<=r;i++){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i}</td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:60px"></td><td><input type="number" style="width:70px"></td><td><input style="width:120px"></td>`; tb.appendChild(tr);} }
-  function percentToBpm(pct){ const prof=LS.get('elite_profile',{}); const mhr=prof.mhr || mhrFromModel(prof.age||30, prof.sex||'', prof.mhrModel||'auto'); return Math.round(mhr*pct/100); }
-  function setTarget(str){ if(bikeTarget) bikeTarget.value=str; }
-  function applyBikeUI(){
-    const p=bikeProto?.value;
-    const z=calcZones(LS.get('elite_profile',{}));
-    const cfg={
-      ng10:{r:10,w:30,rest:30,txt:`10 rounds of 0:30 hard / 0:30 easy.`,hr:`~85% max HR (${percentToBpm(85)} bpm).`},
-      prog5:{r:1,w:300,rest:0,txt:`Single 5:00 time trial.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
-      ext6:{r:6,w:300,rest:120,txt:`6×5:00 @ 2:00 easy.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
-      tab8:{r:8,w:20,rest:10,txt:`8×20s max / 10s easy.`,hr:`95%+ max HR (≈${percentToBpm(95)} bpm).`},
-      ps10:{r:10,w:10,rest:50,txt:`10×10s max / 50s easy.`,hr:`Max effort sprints.`},
-      steady:{r:1,w:1800,rest:0,txt:`Z2 steady 30:00.`,hr:`Z2 ${z.z2[0]}–${z.z2[1]} bpm.`},
-      z5:{r:6,w:60,rest:120,txt:`6×1:00 / 2:00 easy.`,hr:`90%+ max HR (≈${percentToBpm(92)} bpm).`},
-      peak:{r:6,w:20,rest:100,txt:`6×0:20 max / 1:40 easy.`,hr:`Max effort; full recovery.`}
-    }[p||'peak'];
-    if(!cfg) return;
-    if(bikeRounds) bikeRounds.value=cfg.r; if(bikeWork) bikeWork.value=cfg.w; if(bikeRest) bikeRest.value=cfg.rest;
-    setTarget(cfg.hr); if(bikeELI5) bikeELI5.textContent=cfg.txt; seedBikeRows();
-  }
+/* ========= Bike ========= */
+const bikeProto=document.getElementById('bikeProto'); const bikeRounds=document.getElementById('bikeRounds'); const bikeWork=document.getElementById('bikeWork'); const bikeRest=document.getElementById('bikeRest'); const bikeTarget=document.getElementById('bikeTarget'); const bikeELI5=document.getElementById('bikeELI5');
+function resetBikeUI(){ if(!bikeProto) return; bikeProto.value='peak'; applyBikeUI(); const tb=document.querySelector('#bikeTable tbody'); if(tb){tb.innerHTML=''; seedBikeRows();} }
+function seedBikeRows(){ const r=fmt(bikeRounds?.value)||6; const tb=document.querySelector('#bikeTable tbody'); if(!tb) return; tb.innerHTML=''; for(let i=1;i<=r;i++){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i}</td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:60px"></td><td><input type="number" style="width:70px"></td><td><input style="width:120px"></td>`; tb.appendChild(tr);} }
+function percentToBpm(pct){ const prof=LS.get('elite_profile',{}); const mhr=prof.mhr || mhrFromModel(prof.age||30, prof.sex||'', prof.mhrModel||'auto'); return Math.round(mhr*pct/100); }
+function setTarget(str){ if(bikeTarget) bikeTarget.value=str; }
+function applyBikeUI(){
+  const p=bikeProto?.value;
+  const z=calcZones(LS.get('elite_profile',{}));
+  const cfg={
+    ng10:{r:10,w:30,rest:30,txt:`10 rounds of 0:30 hard / 0:30 easy.`,hr:`~85% max HR (${percentToBpm(85)} bpm).`},
+    prog5:{r:1,w:300,rest:0,txt:`Single 5:00 time trial.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
+    ext6:{r:6,w:300,rest:120,txt:`6×5:00 @ 2:00 easy.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
+    tab8:{r:8,w:20,rest:10,txt:`8×20s max / 10s easy.`,hr:`95%+ max HR (≈${percentToBpm(95)} bpm).`},
+    ps10:{r:10,w:10,rest:50,txt:`10×10s max / 50s easy.`,hr:`Max effort sprints.`},
+    steady:{r:1,w:1800,rest:0,txt:`Z2 steady 30:00.`,hr:`Z2 ${z.z2[0]}–${z.z2[1]} bpm.`},
+    z5:{r:6,w:60,rest:120,txt:`6×1:00 / 2:00 easy.`,hr:`90%+ max HR (≈${percentToBpm(92)} bpm).`},
+    peak:{r:6,w:20,rest:100,txt:`6×0:20 max / 1:40 easy.`,hr:`Max effort; full recovery.`}
+  }[p||'peak'];
+  if(!cfg) return;
+  if(bikeRounds) bikeRounds.value=cfg.r; if(bikeWork) bikeWork.value=cfg.w; if(bikeRest) bikeRest.value=cfg.rest;
+  setTarget(cfg.hr); if(bikeELI5) bikeELI5.textContent=cfg.txt; seedBikeRows();
+}
 
-  function resetBJJ(){['bjjTime','bjjInt','bjjW1','bjjW2','bjjFeel','bjjSleep'].forEach(id=>{const el=document.getElementById(id); if(!el) return; if(el.tagName==='SELECT')el.value=''; else el.value='';});}
-  function resetWalk(){['wDur','wDist','wPace'].forEach(id=>{const el=document.getElementById(id); if(el) el.value=''}); if(document.getElementById('wTer')) document.getElementById('wTer').value='Flat'; if(document.getElementById('wPur')) document.getElementById('wPur').value='Recovery';}
+/* ========= BJJ / Walk simple resets ========= */
+function resetBJJ(){['bjjTime','bjjInt','bjjW1','bjjW2','bjjFeel','bjjSleep'].forEach(id=>{const el=document.getElementById(id); if(!el) return; if(el.tagName==='SELECT')el.value=''; else el.value='';});}
+function resetWalk(){['wDur','wDist','wPace'].forEach(id=>{const el=document.getElementById(id); if(el) el.value=''}); if(document.getElementById('wTer')) document.getElementById('wTer').value='Flat'; if(document.getElementById('wPur')) document.getElementById('wPur').value='Recovery';}
 
-  // ===== Original strength volume aggregation =====
-  function collectStrengthVolume(rootId){
-    const list=[...document.querySelectorAll(`#${rootId}-list .setBody tr`)];
-    let v=0, rpeSum=0, rpeN=0;
-    list.forEach(tr=>{ const w=fmt(tr.querySelector('.w').value), r=fmt(tr.querySelector('.r').value), p=fmt(tr.querySelector('.p').value); if(w>0&&r>0){v+=w*r; if(p){rpeSum+=p;rpeN++;}} });
-    const avg=rpeN? rpeSum/rpeN : 0;
-    return {volume:v, rpe:avg};
-  }
+/* ========= Strength volume aggregation ========= */
+function collectStrengthVolume(rootId){
+  const list=[...document.querySelectorAll(`#${rootId}-list .setBody tr`)];
+  let v=0, rpeSum=0, rpeN=0;
+  list.forEach(tr=>{ const w=fmt(tr.querySelector('.w').value), r=fmt(tr.querySelector('.r').value), p=fmt(tr.querySelector('.p').value); if(w>0&&r>0){v+=w*r; if(p){rpeSum+=p;rpeN++;}} });
+  const avg=rpeN? rpeSum/rpeN : 0;
+  return {volume:v, rpe:avg};
+}
 
-  // ===== ADDED: HR Session I/O =====
-  function resetHRInputs(){
-    ['hrMaxSess','hrAvgSess','hrZ1','hrZ2','hrZ3','hrZ4','hrZ5'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
-    const imgInput = document.getElementById('hrImg'); if(imgInput) imgInput.value='';
-  }
-  function loadHRFromStore(day){
-    if(!day?.hr) return;
-    const h=day.hr;
-    const set=(id,v)=>{const el=document.getElementById(id); if(el!=null) el.value=(v??'');};
-    set('hrMaxSess',h.max); set('hrAvgSess',h.avg);
-    set('hrZ1',h.z1); set('hrZ2',h.z2); set('hrZ3',h.z3); set('hrZ4',h.z4); set('hrZ5',h.z5);
-  }
-  function attachHRImage(input){
-    const file = input.files && input.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e){
-      // store now so it isn't lost if user closes
-      if(!store[curKey]) store[curKey]={modalities:{}};
-      store[curKey].hr = store[curKey].hr || {};
-      store[curKey].hr.img = e.target.result; // base64 data URL
-      LS.set('elite_days',store);
-      document.getElementById('saveNote').textContent='HR image attached ✓';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ===== ADDED: TRIMP / TSS (Edwards + Banister hybrid) =====
-  function computeTRIMPfromZones(z){
-    // Edwards points: Z1=1, Z2=2, Z3=3, Z4=4, Z5=5 (minutes * weight)
-    if(!z) return 0;
-    const pts = (fmt(z.z1)*1) + (fmt(z.z2)*2) + (fmt(z.z3)*3) + (fmt(z.z4)*4) + (fmt(z.z5)*5);
-    return pts; // already comparable TSS-ish unit
-  }
-  function computeBanister(avgHR, rhr, mhr, durationMin){
-    // Banister TRIMP ~ duration * HRr * exp(k*HRr); k ≈ 1.92 (men), 1.67 (women)
-    const prof=LS.get('elite_profile',{}); const k = ((prof.sex||'').toLowerCase()==='female') ? 1.67 : 1.92;
-    const HRr = (mhr>rhr && avgHR) ? ( (avgHR - rhr) / (mhr - rhr) ) : 0;
-    return Math.max(0, fmt(durationMin)*HRr*Math.exp(k*HRr));
-  }
-
-  // ===== ADDED: ACWR / Monotony / Strain =====
-  function recentTSS(daysBack){
-    // sum of TSS over last N days including today if saved
-    let total=0, n=0;
-    const end=new Date(curKey || new Date());
-    const start=new Date(end); start.setDate(end.getDate()-(daysBack-1));
-    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-      const k=toKey(d); const day=store[k];
-      if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
-    }
-    return {total, n};
-  }
-  function computeACWR(){
-    // acute = last 7d avg; chronic = last 28d avg
-    const a = window.__sumRange(7), c = window.__sumRange(28);
-    const acuteAvg = a.n? a.total/a.n : 0;
-    const chronicAvg = c.n? c.total/c.n : 0.0001; // avoid div/0
-    return { acuteAvg, chronicAvg, ratio: acuteAvg/chronicAvg };
-  }
-  window.__sumRange = function(days){
-    let total=0, n=0;
-    const end = new Date(curKey || new Date());
-    const start = new Date(end); start.setDate(end.getDate()-(days-1));
-    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-      const k=toKey(d); const day=store[k];
-      if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
-    }
-    return {total,n};
+/* ========= HR Session I/O ========= */
+function resetHRInputs(){
+  ['hrMaxSess','hrAvgSess','hrZ1','hrZ2','hrZ3','hrZ4','hrZ5'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  const imgInput = document.getElementById('hrImg'); if(imgInput) imgInput.value='';
+}
+function loadHRFromStore(day){
+  if(!day?.hr) return;
+  const h=day.hr;
+  const set=(id,v)=>{const el=document.getElementById(id); if(el!=null) el.value=(v??'');};
+  set('hrMaxSess',h.max); set('hrAvgSess',h.avg);
+  set('hrZ1',h.z1); set('hrZ2',h.z2); set('hrZ3',h.z3); set('hrZ4',h.z4); set('hrZ5',h.z5);
+}
+function attachHRImage(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    if(!store[curKey]) store[curKey]={modalities:{}};
+    store[curKey].hr = store[curKey].hr || {};
+    store[curKey].hr.img = e.target.result;
+    LS.set('elite_days',store);
+    document.getElementById('saveNote').textContent='HR image attached ✓';
   };
+  reader.readAsDataURL(file);
+}
 
-  // ===== ADDED: Auto-Prescription (Option A)
-  function computePrescription(){
-    const prof=LS.get('elite_profile',{})||{};
-    const z=calcZones(prof);
-    const h={
-      max: fmt(document.getElementById('hrMaxSess').value),
-      avg: fmt(document.getElementById('hrAvgSess').value),
-      z1: fmt(document.getElementById('hrZ1').value), z2: fmt(document.getElementById('hrZ2').value),
-      z3: fmt(document.getElementById('hrZ3').value), z4: fmt(document.getElementById('hrZ4').value), z5: fmt(document.getElementById('hrZ5').value)
-    };
-    const ed=computeTRIMPfromZones(h);
-    const duration = h.z1+h.z2+h.z3+h.z4+h.z5;
-    const ban=computeBanister(h.avg, prof.rhr||0, z.mhr, duration);
-    const tssHR = Math.round( (ed*0.6) + (ban*0.4) ); // blended
-    const acwr=computeACWR();
-    const ratio=acwr.ratio;
+/* ========= TRIMP / TSS ========= */
+function computeTRIMPfromZones(z){
+  if(!z) return 0;
+  const pts = (fmt(z.z1)*1) + (fmt(z.z2)*2) + (fmt(z.z3)*3) + (fmt(z.z4)*4) + (fmt(z.z5)*5);
+  return pts;
+}
+function computeBanister(avgHR, rhr, mhr, durationMin){
+  const prof=LS.get('elite_profile',{}); const k = ((prof.sex||'').toLowerCase()==='female') ? 1.67 : 1.92;
+  const HRr = (mhr>rhr && avgHR) ? ( (avgHR - rhr) / (mhr - rhr) ) : 0;
+  return Math.max(0, fmt(durationMin)*HRr*Math.exp(k*HRr));
+}
 
-    // Decision logic (simple, conservative sports-science guardrails)
-    // High ACWR => recovery/skills; normal => allow strength/power; low => add conditioning/volume.
-    let rec=[];
-    if(ratio>=1.5 || tssHR>=120){ rec.push('Recovery / Technique only (HR Z1–Z2 20–40 min), mobility, breathing.'); }
-    else if(ratio>=1.3 || tssHR>=90){ rec.push('Light Strength (upper OR lower), low volume; optional Z2 20 min.'); }
-    else if(ratio<=0.8){ rec.push('Add Conditioning (Z2 30–45 min) OR Power sprints (6×20s / 100s).'); }
-    else { rec.push('Primary: Strength (one focus) + brief Power/speed; keep total CNS ≤ 75.'); }
-
-    // Bias by today’s zone composition:
-    if(h.z4+h.z5>=20) rec.push('Avoid more Z4–Z5 today; no max sprints.');
-    if(duration>=75 && h.avg>=0.75*z.mhr) rec.push('Cap total volume; favor technique over load.');
-    if((prof.sport||'').toLowerCase().includes('fight')) rec.push('Add positional drilling or light BJJ flow if fresh.');
-
-    const txt = `Today HR-TSS ≈ ${tssHR}, ACWR=${ratio.toFixed(2)} → ${rec.join(' ')}`;
-    document.getElementById('rxSummary').innerHTML = txt;
-    // store preview in memory to allow apply
-    window.__rx = { tss:tssHR, acwr:ratio, notes:rec };
+/* ========= ACWR ========= */
+function recentTSS(daysBack){
+  let total=0, n=0;
+  const end=new Date(curKey || new Date());
+  const start=new Date(end); start.setDate(end.getDate()-(daysBack-1));
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const k=toKey(d); const day=store[k];
+    if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
   }
-
-  function applyPrescription(){
-    // minimally toggle sections based on recommendation text; keep it simple and additive.
-    const sum = (document.getElementById('rxSummary')?.textContent||'').toLowerCase();
-    function on(id){ const chk=document.getElementById(id.replace('sec','m')); if(chk && !chk.checked){ chk.checked=true; } const el=document.getElementById(id); if(el && el.style.display==='none') el.style.display='block'; }
-    if(sum.includes('recovery')){ on('secWalk'); }
-    if(sum.includes('strength')){ on('secChest'); on('secBack'); }
-    if(sum.includes('power') || sum.includes('sprint')){ on('secTrack'); }
-    if(sum.includes('conditioning') || sum.includes('z2')){ on('secBike'); }
-    document.getElementById('saveNote').textContent='Plan toggled ✓ (you can customize further)';
+  return {total, n};
+}
+function computeACWR(){
+  const a = window.__sumRange(7), c = window.__sumRange(28);
+  const acuteAvg = a.n? a.total/a.n : 0;
+  const chronicAvg = c.n? c.total/c.n : 0.0001;
+  return { acuteAvg, chronicAvg, ratio: acuteAvg/chronicAvg };
+}
+window.__sumRange = function(days){
+  let total=0, n=0;
+  const end = new Date(curKey || new Date());
+  const start = new Date(end); start.setDate(end.getDate()-(days-1));
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const k=toKey(d); const day=store[k];
+    if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
   }
+  return {total,n};
+};
 
-  // ===== ORIGINAL saveDay, extended additively with HR/TRIMP and ACWR updates =====
-  function saveDay(){
+/* ========= Auto-Prescription ========= */
+function computePrescription(){
+  const prof=LS.get('elite_profile',{})||{};
+  const z=calcZones(prof);
+  const h={
+    max: fmt(document.getElementById('hrMaxSess').value),
+    avg: fmt(document.getElementById('hrAvgSess').value),
+    z1: fmt(document.getElementById('hrZ1').value), z2: fmt(document.getElementById('hrZ2').value),
+    z3: fmt(document.getElementById('hrZ3').value), z4: fmt(document.getElementById('hrZ4').value), z5: fmt(document.getElementById('hrZ5').value)
+  };
+  const ed=computeTRIMPfromZones(h);
+  const duration = h.z1+h.z2+h.z3+h.z4+h.z5;
+  const ban=computeBanister(h.avg, prof.rhr||0, z.mhr, duration);
+  const tssHR = Math.round( (ed*0.6) + (ban*0.4) );
+  const acwr=computeACWR();
+  const ratio=acwr.ratio;
+
+  let rec=[];
+  if(ratio>=1.5 || tssHR>=120){ rec.push('Recovery / Technique only (HR Z1–Z2 20–40 min), mobility, breathing.'); }
+  else if(ratio>=1.3 || tssHR>=90){ rec.push('Light Strength (upper OR lower), low volume; optional Z2 20 min.'); }
+  else if(ratio<=0.8){ rec.push('Add Conditioning (Z2 30–45 min) OR Power sprints (6×20s / 100s).'); }
+  else { rec.push('Primary: Strength (one focus) + brief Power/speed; keep total CNS ≤ 75.'); }
+
+  if(h.z4+h.z5>=20) rec.push('Avoid more Z4–Z5 today; no max sprints.');
+  if(duration>=75 && h.avg>=0.75*z.mhr) rec.push('Cap total volume; favor technique over load.');
+  if((prof.sport||'').toLowerCase().includes('fight')) rec.push('Add positional drilling or light BJJ flow if fresh.');
+
+  const txt = `Today HR-TSS ≈ ${tssHR}, ACWR=${ratio.toFixed(2)} → ${rec.join(' ')}`;
+  document.getElementById('rxSummary').innerHTML = txt;
+  window.__rx = { tss:tssHR, acwr:ratio, notes:rec };
+}
+function applyPrescription(){
+  const sum = (document.getElementById('rxSummary')?.textContent||'').toLowerCase();
+  function on(id){ const chk=document.getElementById(id.replace('sec','m')); if(chk && !chk.checked){ chk.checked=true; } const el=document.getElementById(id); if(el && el.style.display==='none') el.style.display='block'; }
+  if(sum.includes('recovery')){ on('secWalk'); }
+  if(sum.includes('strength')){ on('secChest'); on('secBack'); }
+  if(sum.includes('power') || sum.includes('sprint')){ on('secTrack'); }
+  if(sum.includes('conditioning') || sum.includes('z2')){ on('secBike'); }
+  document.getElementById('saveNote').textContent='Plan toggled ✓ (you can customize further)';
+}
+
+/* ========= Save Day ========= */
+function saveDay(){
+  try{
     const day=store[curKey] || {modalities:{}};
 
-    // original strength
     if(document.getElementById('mChest').checked){ const s=collectStrengthVolume('chestBox'); if(s.volume>0){ day.modalities.chest={volume:s.volume,cnsScore:clamp(40+(s.rpe-6)*8,0,100),tss:Math.round(s.rpe*12)}; } }
     if(document.getElementById('mBack').checked){ const s=collectStrengthVolume('backBox'); if(s.volume>0){ day.modalities.back={volume:s.volume,cnsScore:clamp(40+(s.rpe-6)*8,0,100),tss:Math.round(s.rpe*12)}; } }
     if(document.getElementById('mLegs').checked){ const s=collectStrengthVolume('legsBox'); if(s.volume>0){ day.modalities.legs={volume:s.volume,cnsScore:clamp(45+(s.rpe-6)*9,0,100),tss:Math.round(s.rpe*14)}; } }
@@ -913,18 +962,15 @@
     if(document.getElementById('mBJJ').checked){ const t=fmt(document.getElementById('bjjTime').value)||0; const inten=document.getElementById('bjjInt').value; let c=40+(inten==='High'?20:inten==='Medium'?10:0); day.modalities.bjj={cnsScore:c,tss:Math.round(t*1.5)}; }
     if(document.getElementById('mWalk').checked){ const dur=fmt(document.getElementById('wDur').value)||30; day.modalities.walking={cnsScore:10,tss:Math.round(dur*0.5)}; }
 
-    // ADDED: attach HR session to day + compute blended HR-TSS
     const h={
       max: fmt(document.getElementById('hrMaxSess').value),
       avg: fmt(document.getElementById('hrAvgSess').value),
       z1: fmt(document.getElementById('hrZ1').value), z2: fmt(document.getElementById('hrZ2').value),
       z3: fmt(document.getElementById('hrZ3').value), z4: fmt(document.getElementById('hrZ4').value), z5: fmt(document.getElementById('hrZ5').value)
     };
-    // keep any previously attached image
     if(day.hr && day.hr.img) h.img = day.hr.img;
     day.hr = h;
 
-    // HR-based load
     const prof=LS.get('elite_profile',{})||{};
     const z=calcZones(prof);
     const ed=computeTRIMPfromZones(h);
@@ -932,10 +978,8 @@
     const ban=computeBanister(h.avg, prof.rhr||0, z.mhr, duration);
     const tssHR = Math.round( (ed*0.6) + (ban*0.4) );
 
-    // roll up totals (original + HR)
     let CNS=0,VOL=0,TSS=0;
     Object.values(day.modalities||{}).forEach(m=>{CNS+=fmt(m.cnsScore); VOL+=fmt(m.volume); TSS+=fmt(m.tss)});
-    // add HR-TSS if >0
     if(tssHR>0) TSS += tssHR;
 
     day.totalCNS=Math.round(CNS); day.totalVolume=Math.round(VOL||0); day.tss=Math.round(TSS);
@@ -943,140 +987,174 @@
     store[curKey]=day; LS.set('elite_days',store);
     hist.push({d:curKey,tss:day.tss}); if(hist.length>56) hist.shift(); LS.set('elite_tss',hist);
     setKPIs(day); document.getElementById('saveNote').textContent='Saved ✓'; renderCal();
+  }catch(e){ showErr('saveDay() failed:\n'+(e&&e.stack||e)); }
+}
+
+/* ========= Weekly Summary ========= */
+const weekModal=document.getElementById('weekModal');
+function closeWeek(){weekModal.classList.remove('show')}
+document.getElementById('weeklyBtn').onclick=()=>{
+  const end=new Date(); const start=new Date(); start.setDate(start.getDate()-6);
+  let totalCNS=0,totalVOL=0,totalTSS=0,days=0;
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const k=toKey(d); const day=store[k];
+    if(day){days++; totalCNS+=fmt(day.totalCNS); totalVOL+=fmt(day.totalVolume); totalTSS+=fmt(day.tss);}
   }
+  const avgCNS=days?Math.round(totalCNS/days):0;
+  const acwr=computeACWR();
+  document.getElementById('weekBody').innerHTML=`
+    <div class="grid2">
+      <div class="kpi"><div class="muted">Total Volume (lb)</div><div class="v">${(totalVOL||0).toLocaleString()}</div></div>
+      <div class="kpi"><div class="muted">Avg daily CNS</div><div class="v">${avgCNS}</div></div>
+      <div class="kpi"><div class="muted">Weekly TSS</div><div class="v">${Math.round(totalTSS)}</div></div>
+      <div class="kpi"><div class="muted">ACWR (7d / 28d)</div><div class="v">${acwr.ratio.toFixed(2)}</div></div>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      <span class="${acwr.ratio>=1.5?'warn':'ok'}">Guideline:</span> Keep ACWR roughly 0.8–1.3 most weeks; >1.5 = elevated risk → schedule deload / technique focus.
+    </div>`;
+  weekModal.classList.add('show');
+};
 
-  const weekModal=document.getElementById('weekModal');
-  function closeWeek(){weekModal.classList.remove('show')}
-  document.getElementById('weeklyBtn').onclick=()=>{
-    const end=new Date(); const start=new Date(); start.setDate(start.getDate()-6);
-    let totalCNS=0,totalVOL=0,totalTSS=0,days=0;
-    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-      const k=toKey(d); const day=store[k];
-      if(day){days++; totalCNS+=fmt(day.totalCNS); totalVOL+=fmt(day.totalVolume); totalTSS+=fmt(day.tss);}
-    }
-    const avgCNS=days?Math.round(totalCNS/days):0;
-    const acwr=computeACWR();
-    document.getElementById('weekBody').innerHTML=`
-      <div class="grid2">
-        <div class="kpi"><div class="muted">Total Volume (lb)</div><div class="v">${(totalVOL||0).toLocaleString()}</div></div>
-        <div class="kpi"><div class="muted">Avg daily CNS</div><div class="v">${avgCNS}</div></div>
-        <div class="kpi"><div class="muted">Weekly TSS</div><div class="v">${Math.round(totalTSS)}</div></div>
-        <div class="kpi"><div class="muted">ACWR (7d / 28d)</div><div class="v">${acwr.ratio.toFixed(2)}</div></div>
-      </div>
-      <div class="hint" style="margin-top:8px">
-        <span class="${acwr.ratio>=1.5?'warn':'ok'}">Guideline:</span> Keep ACWR roughly 0.8–1.3 most weeks; >1.5 = elevated risk → schedule deload / technique focus.
-      </div>`;
-    weekModal.classList.add('show');
+/* ========= Fight Camp storage ========= */
+const campModal=document.getElementById('campModal');
+document.getElementById('fightCampBtn').onclick=()=>{ campModal.classList.add('show'); };
+function closeCamp(){ campModal.classList.remove('show'); }
+function saveCamp(){
+  const data={
+    len:fmt(document.getElementById('fcLen').value), wk:fmt(document.getElementById('fcWeek').value),
+    order:document.getElementById('fcOrder').value, level:document.getElementById('fcLevel').value,
+    t1:{watts:fmt(document.getElementById('t1Watts').value), peak:fmt(document.getElementById('t1Peak').value), hr60:fmt(document.getElementById('t1HR60').value)},
+    t2:{mb:fmt(document.getElementById('t2MB').value), R:fmt(document.getElementById('t2R').value), L:fmt(document.getElementById('t2L').value)},
+    t3:{dist:fmt(document.getElementById('t3Dist').value), unit:document.getElementById('t3Unit').value},
+    t4:{type:document.getElementById('t4Type').value, load:fmt(document.getElementById('t4Load').value)}
   };
+  LS.set('elite_camp',data); closeCamp();
+}
 
-  // Fight camp modal open/close/save (original function names unchanged)
-  const campModal=document.getElementById('campModal');
-  document.getElementById('fightCampBtn').onclick=()=>{ campModal.classList.add('show'); };
-  function closeCamp(){ campModal.classList.remove('show'); }
-  function saveCamp(){
-    const data={
-      len:fmt(document.getElementById('fcLen').value), wk:fmt(document.getElementById('fcWeek').value),
-      order:document.getElementById('fcOrder').value, level:document.getElementById('fcLevel').value,
-      t1:{watts:fmt(document.getElementById('t1Watts').value), peak:fmt(document.getElementById('t1Peak').value), hr60:fmt(document.getElementById('t1HR60').value)},
-      t2:{mb:fmt(document.getElementById('t2MB').value), R:fmt(document.getElementById('t2R').value), L:fmt(document.getElementById('t2L').value)},
-      t3:{dist:fmt(document.getElementById('t3Dist').value), unit:document.getElementById('t3Unit').value},
-      t4:{type:document.getElementById('t4Type').value, load:fmt(document.getElementById('t4Load').value)}
+/* ========= Library ========= */
+const EX_LIB={
+  'Chest':['Barbell Bench Press','Dumbbell Bench Press','Incline Bench Press','Weighted Dips','Push-Up (weighted)','Weighted Push-Up','Decline Bench Press','Machine Chest Press','Cable Crossover','Incline Dumbbell Fly','Push-Up','Push-Up (feet elevated)','Archer Push-Up','Ring Push-Up','Dip'],
+  'Back':['Weighted Pull-Up','Barbell Row','One-Arm DB Row','Lat Pulldown','Chest-Supported Row','Seated Cable Row','T-Bar Row','Trap-Bar Deadlift','Pull-Up','Chin-Up','Neutral-Grip Pull-Up','Inverted Row','Towel Row'],
+  'Shoulders':['Overhead Press (Barbell)','Seated DB Shoulder Press','Arnold Press','Lateral Raise','Rear-Delt Fly','High Pull','Landmine Press','Machine OHP','Pike Push-Up','Feet-Elevated Pike Push-Up','Handstand Hold (wall)','Handstand Push-Up (assisted)'],
+  'Biceps':['Barbell Curl','DB Curl','Incline DB Curl','Hammer Curl','EZ-Bar Curl','Preacher Curl','Cable Curl','Chin-Up (supinated)','Commando Pull-Up','Bodyweight Curl (rings/TRX)'],
+  'Triceps':['Close-Grip Bench Press','Weighted Dip','Skullcrusher (EZ)','Overhead Triceps Extension','Cable Pressdown','Floor Press','Diamond Push-Up','Bench Dip','Ring/Bar Dip','Bodyweight Triceps Extension (rings/TRX)'],
+  'Quads':['Back Squat','Front Squat','Hack Squat','Leg Press (heels low)','Walking Lunge','Bulgarian Split Squat','Wall Sit (loaded)','Bodyweight Squat','Tempo Squat','Split Squat','Reverse Lunge','Step-Up','Pistol Squat (assisted)','Wall Sit'],
+  'Hamstrings':['Romanian Deadlift','Nordic Curl','Hip Hinge Good Morning','Glute-Ham Raise','Seated Leg Curl','SL RDL','Nordic Curl (assisted)','Sliding Leg Curl (towel)','Hip Hinge (tempo)','Single-Leg Bridge (ham focus)'],
+  'Glutes':['Hip Thrust (barbell)','Glute Bridge (single-leg)','Back Squat (wide)','Step-Up (high box)','Cable Kickback','Reverse Lunge','Hip Thrust (bodyweight)','Glute Bridge','Single-Leg Hip Thrust','Step-Up','Frog Pump'],
+  'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise','Jump Rope (heavy)','Standing Calf Raise (BW)','Single-Leg Calf Raise (BW)','Tiptoe Walks','Pogo Hops'],
+  'Core':['Hanging Leg Raise','Weighted Plank','Ab Wheel Rollout','Cable Woodchop','Pallof Press','Dead Bug (weighted)','Plank','Side Plank','Hollow Body Hold','Dead Bug','Hanging Knee Raise','V-Up','Bird Dog'],
+  'MMA':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Clinch Pummeling — Isometric/Flow','Wall Clinch — Underhook Series','Wrestling Shots — Repeat Singles','Sprawl to Shot — Conditioning','GNP (Ground-and-Pound) from Guard/Half','GNP from Mount/Side Control','Positional Sparring — BJJ Rounds','Scramble Drills — Turtle/Escapes','MMA Conditioning Circuit — Bag + Sprawl + Burpee','Cage Walks — Get-Up Reps'],
+  'Boxing':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Slip Line — Head Movement','Footwork Ladders/Cones','Sparring — Rounds']
+};
+let LIB_TARGET=null;
+function attachLibButton(targetId){
+  const box=document.getElementById(targetId);
+  const row=box.querySelector('.row');
+  if(!row) return;
+  const btn=document.createElement('button');
+  btn.className='btn';
+  btn.textContent='📚 Exercise Library';
+  btn.onclick=()=>openLib(targetId);
+  row.appendChild(btn);
+}
+function openLib(targetId){
+  LIB_TARGET=targetId;
+  document.getElementById('libGroup').value='';
+  populateLibExercises();
+  document.getElementById('libCustomName').value='';
+  document.getElementById('libCustomGroup').value='';
+  document.getElementById('libModal').classList.add('show');
+  document.getElementById('libHint').textContent='Inserting into: ' + (targetId==='chestBox'?'CHEST':targetId==='backBox'?'BACK':'LEGS');
+}
+function closeLib(){ document.getElementById('libModal').classList.remove('show'); }
+function populateLibExercises(){
+  const grp=document.getElementById('libGroup').value;
+  const sel=document.getElementById('libExercise'); sel.innerHTML='';
+  const opt0=document.createElement('option'); opt0.value=''; opt0.textContent=grp?`Choose ${grp} exercise…`:'—'; sel.appendChild(opt0);
+  if(!grp) return; (EX_LIB[grp]||[]).forEach(n=>{const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o)});
+}
+function insertFromLibrary(){
+  if(!LIB_TARGET){ closeLib(); return; }
+  let name=document.getElementById('libExercise').value;
+  let group=document.getElementById('libGroup').value;
+  const cname=document.getElementById('libCustomName').value.trim();
+  const cgroup=document.getElementById('libCustomGroup').value.trim();
+  if(cname){ name=cname; }
+  if(cgroup){ group=cgroup; }
+  if(!name){ alert('Choose an exercise or enter a custom name.'); return; }
+  addExercise(LIB_TARGET);
+  const list=document.getElementById(`${LIB_TARGET}-list`);
+  const ex=list.lastElementChild;
+  const nameInput=ex.querySelector('.ex-name');
+  const groupSelect=ex.querySelector('.ex-muscle');
+  nameInput.value=name;
+  if(group && ![...groupSelect.options].some(o=>o.textContent.toLowerCase()===group.toLowerCase())){ const o=document.createElement('option'); o.textContent=group; o.value=group; groupSelect.appendChild(o); }
+  if(group){ groupSelect.value=group; }
+  const roundKeywords = ['Heavy Bag','Mitt','Shadowboxing','Clinch','GNP','Positional','Scramble','Wrestling','Sprawl','Circuit','Cage','Speed Bag','Double-End Bag','Slip','Footwork','Sparring'];
+  const isRoundBased = (group && (group.toLowerCase()==='mma' || group.toLowerCase()==='boxing')) || roundKeywords.some(k => (name||'').toLowerCase().includes(k.toLowerCase()));
+  if(isRoundBased){ setExerciseMode(ex,'rounds'); }
+  closeLib();
+}
+
+/* ========= Print Day ========= */
+function printDay(){
+  try{
+    const panel = document.getElementById('dayPanel');
+    if(!panel){ window.print(); return; }
+    window.print();
+  }catch(e){ showErr('Print failed:\n'+(e&&e.stack||e)); }
+}
+
+/* ========= Export / Import / Reset ========= */
+document.getElementById('exportBtn').onclick=()=>{
+  try{
+    const payload={
+      elite_profile: LS.get('elite_profile',null),
+      elite_days: LS.get('elite_days',{}),
+      elite_tss: LS.get('elite_tss',[]),
+      elite_camp: LS.get('elite_camp',null)
     };
-    LS.set('elite_camp',data); closeCamp();
-  }
-
-  // Library (unchanged)
-  const EX_LIB={
-    'Chest':['Barbell Bench Press','Dumbbell Bench Press','Incline Bench Press','Weighted Dips','Push-Up (weighted)','Weighted Push-Up','Decline Bench Press','Machine Chest Press','Cable Crossover','Incline Dumbbell Fly','Push-Up','Push-Up (feet elevated)','Archer Push-Up','Ring Push-Up','Dip'],
-    'Back':['Weighted Pull-Up','Barbell Row','One-Arm DB Row','Lat Pulldown','Chest-Supported Row','Seated Cable Row','T-Bar Row','Trap-Bar Deadlift','Pull-Up','Chin-Up','Neutral-Grip Pull-Up','Inverted Row','Towel Row'],
-    'Shoulders':['Overhead Press (Barbell)','Seated DB Shoulder Press','Arnold Press','Lateral Raise','Rear-Delt Fly','High Pull','Landmine Press','Machine OHP','Pike Push-Up','Feet-Elevated Pike Push-Up','Handstand Hold (wall)','Handstand Push-Up (assisted)'],
-    'Biceps':['Barbell Curl','DB Curl','Incline DB Curl','Hammer Curl','EZ-Bar Curl','Preacher Curl','Cable Curl','Chin-Up (supinated)','Commando Pull-Up','Bodyweight Curl (rings/TRX)'],
-    'Triceps':['Close-Grip Bench Press','Weighted Dip','Skullcrusher (EZ)','Overhead Triceps Extension','Cable Pressdown','Floor Press','Diamond Push-Up','Bench Dip','Ring/Bar Dip','Bodyweight Triceps Extension (rings/TRX)'],
-    'Quads':['Back Squat','Front Squat','Hack Squat','Leg Press (heels low)','Walking Lunge','Bulgarian Split Squat','Wall Sit (loaded)','Bodyweight Squat','Tempo Squat','Split Squat','Reverse Lunge','Step-Up','Pistol Squat (assisted)','Wall Sit'],
-    'Hamstrings':['Romanian Deadlift','Nordic Curl','Hip Hinge Good Morning','Glute-Ham Raise','Seated Leg Curl','SL RDL','Nordic Curl (assisted)','Sliding Leg Curl (towel)','Hip Hinge (tempo)','Single-Leg Bridge (ham focus)'],
-    'Glutes':['Hip Thrust (barbell)','Glute Bridge (single-leg)','Back Squat (wide)','Step-Up (high box)','Cable Kickback','Reverse Lunge','Hip Thrust (bodyweight)','Glute Bridge','Single-Leg Hip Thrust','Step-Up','Frog Pump'],
-    'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise','Jump Rope (heavy)','Standing Calf Raise (BW)','Single-Leg Calf Raise (BW)','Tiptoe Walks','Pogo Hops'],
-    'Core':['Hanging Leg Raise','Weighted Plank','Ab Wheel Rollout','Cable Woodchop','Pallof Press','Dead Bug (weighted)','Plank','Side Plank','Hollow Body Hold','Dead Bug','Hanging Knee Raise','V-Up','Bird Dog'],
-    'MMA':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Clinch Pummeling — Isometric/Flow','Wall Clinch — Underhook Series','Wrestling Shots — Repeat Singles','Sprawl to Shot — Conditioning','GNP (Ground-and-Pound) from Guard/Half','GNP from Mount/Side Control','Positional Sparring — BJJ Rounds','Scramble Drills — Turtle/Escapes','MMA Conditioning Circuit — Bag + Sprawl + Burpee','Cage Walks — Get-Up Reps'],
-    'Boxing':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Slip Line — Head Movement','Footwork Ladders/Cones','Sparring — Rounds']
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='elite_planner_backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){ showErr('Export failed:\n'+(e&&e.stack||e)); }
+};
+document.getElementById('importFile').onchange=(ev)=>{
+  const f=ev.target.files && ev.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      if('elite_profile' in obj) localStorage.setItem('elite_profile',JSON.stringify(obj.elite_profile));
+      if('elite_days' in obj) localStorage.setItem('elite_days',JSON.stringify(obj.elite_days));
+      if('elite_tss' in obj) localStorage.setItem('elite_tss',JSON.stringify(obj.elite_tss));
+      if('elite_camp' in obj) localStorage.setItem('elite_camp',JSON.stringify(obj.elite_camp));
+      store=LS.get('elite_days',{}); hist=LS.get('elite_tss',[]);
+      renderZoneChips(); renderCal();
+      alert('Import complete.');
+    }catch(e){ showErr('Import failed:\n'+(e&&e.stack||e)); }
   };
-  let LIB_TARGET=null;
-  function attachLibButton(targetId){
-    const box=document.getElementById(targetId);
-    const row=box.querySelector('.row');
-    if(!row) return;
-    const btn=document.createElement('button');
-    btn.className='btn';
-    btn.textContent='📚 Exercise Library';
-    btn.onclick=()=>openLib(targetId);
-    row.appendChild(btn);
+  r.readAsText(f);
+};
+document.getElementById('hardResetBtn').onclick=()=>{
+  if(confirm('This will clear all saved profile, days, tss, and camp data. Continue?')){
+    localStorage.removeItem('elite_profile');
+    localStorage.removeItem('elite_days');
+    localStorage.removeItem('elite_tss');
+    localStorage.removeItem('elite_camp');
+    store={}; hist=[];
+    renderZoneChips(); renderCal();
+    alert('Reset complete.');
   }
-  function openLib(targetId){
-    LIB_TARGET=targetId;
-    document.getElementById('libGroup').value='';
-    populateLibExercises();
-    document.getElementById('libCustomName').value='';
-    document.getElementById('libCustomGroup').value='';
-    document.getElementById('libModal').classList.add('show');
-    document.getElementById('libHint').textContent='Inserting into: ' + (targetId==='chestBox'?'CHEST':targetId==='backBox'?'BACK':'LEGS');
-  }
-  function closeLib(){ document.getElementById('libModal').classList.remove('show'); }
-  function populateLibExercises(){
-    const grp=document.getElementById('libGroup').value;
-    const sel=document.getElementById('libExercise'); sel.innerHTML='';
-    const opt0=document.createElement('option'); opt0.value=''; opt0.textContent=grp?`Choose ${grp} exercise…`:'—'; sel.appendChild(opt0);
-    if(!grp) return; (EX_LIB[grp]||[]).forEach(n=>{const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o)});
-  }
-  function insertFromLibrary(){
-    if(!LIB_TARGET){ closeLib(); return; }
-    let name=document.getElementById('libExercise').value;
-    let group=document.getElementById('libGroup').value;
-    const cname=document.getElementById('libCustomName').value.trim();
-    const cgroup=document.getElementById('libCustomGroup').value.trim();
-    if(cname){ name=cname; }
-    if(cgroup){ group=cgroup; }
-    if(!name){ alert('Choose an exercise or enter a custom name.'); return; }
-    addExercise(LIB_TARGET);
-    const list=document.getElementById(`${LIB_TARGET}-list`);
-    const ex=list.lastElementChild;
-    const nameInput=ex.querySelector('.ex-name');
-    const groupSelect=ex.querySelector('.ex-muscle');
-    nameInput.value=name;
-    if(group && ![...groupSelect.options].some(o=>o.textContent.toLowerCase()===group.toLowerCase())){ const o=document.createElement('option'); o.textContent=group; o.value=group; groupSelect.appendChild(o); }
-    if(group){ groupSelect.value=group; }
-    const roundKeywords = ['Heavy Bag','Mitt','Shadowboxing','Clinch','GNP','Positional','Scramble','Wrestling','Sprawl','Circuit','Cage','Speed Bag','Double-End Bag','Slip','Footwork','Sparring'];
-    const isRoundBased = (group && (group.toLowerCase()==='mma' || group.toLowerCase()==='boxing')) || roundKeywords.some(k => (name||'').toLowerCase().includes(k.toLowerCase()));
-    if(isRoundBased){ setExerciseMode(ex,'rounds'); }
-    closeLib();
-  }
+};
 
-  function renderZoneOnBoot(){ renderZoneChips(); }
-  function weekInit(){ const el=document.getElementById('weekBody'); if(el) el.innerHTML=''; }
-
-  function applyTrackQuickPick(sel){
-    const bd = sel.closest('.bd');
-    const name = bd.querySelector('.tName');
-    if(name){ name.value = sel.value || name.value; }
-  }
-  function toggleTrackTemplate(sel){
-    const bd = sel.closest('.bd');
-    const mode = sel.value; // sprint | jog | run | other
-    const runBlk = bd.querySelector('.tRunningBlock');
-    const plyoBlk = bd.querySelector('.tPlyoBlock');
-    if(!runBlk || !plyoBlk) return;
-    if(mode==='sprint' || mode==='jog' || mode==='run'){
-      runBlk.style.display = 'block';
-      plyoBlk.style.display = 'none';
-      const name = bd.querySelector('.tName');
-      if(name && !name.value) name.value = mode[0].toUpperCase()+mode.slice(1);
-    } else {
-      runBlk.style.display = 'none';
-      plyoBlk.style.display = 'block';
-    }
-  }
-
-  // boot
-  renderZoneOnBoot(); renderCal(); weekInit();
+/* ========= Boot ========= */
+function renderZoneOnBoot(){ renderZoneChips(); }
+function weekInit(){ const el=document.getElementById('weekBody'); if(el) el.innerHTML=''; }
+renderZoneOnBoot(); renderCal(); weekInit();
 </script>
 </body>
 </html>
