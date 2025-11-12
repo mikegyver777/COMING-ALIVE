@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +49,8 @@
   table{width:100%;border-collapse:collapse}
   th,td{border-bottom:1px solid #1f2a35;padding:8px;text-align:left}
   .chip{display:inline-block;padding:4px 8px;border:1px solid #274b5b;border-radius:999px;color:#9ad7ef;background:#0c151c;margin-right:6px;margin-top:6px;font-size:12px}
-  .sticky{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.8));padding-top:8px}
+  .sticky{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.8));padding-top:8px;z-index:10}
+  .sticky-top{position:sticky;top:0;background:var(--panel);padding:12px;border-bottom:1px solid var(--border);z-index:5;margin:-12px -12px 12px -12px}
   .lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media (max-width:700px){.lib-grid{grid-template-columns:1fr}}
   .hint{font-size:11px;color:#9fb2c7}
@@ -178,7 +180,10 @@
       </div>
 
       <div class="sec">
-        <div class="hd">Training toggles (choose any)</div>
+        <div class="hd" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Training toggles (choose any)</span>
+          <button class="btn primary" id="quickStartTraining" style="padding:8px 16px;font-size:13px" onclick="quickStartDayTraining()">▶️ START TRAINING</button>
+        </div>
         <div class="bd">
           <div class="row">
             <label class="pill"><input type="checkbox" id="mChest" onchange="toggleSection('secChest')"> Chest</label>
@@ -227,8 +232,8 @@
       <div class="sec" id="secTrack" style="display:none">
         <div class="hd">🏃 Track / Plyometrics / Stairs</div>
         <div class="bd">
-          <div class="muted sm" style="margin-bottom:12px">Click “+ Add Exercise” to add exercises. RPE affects CNS/TSS.</div>
-          <div class="row" style="margin:8px 0">
+          <div class="muted sm" style="margin-bottom:12px">Click "+ Add Exercise" to add exercises. RPE affects CNS/TSS.</div>
+          <div class="row sticky-top" style="margin:8px 0">
             <button class="btn primary" onclick="addTrackExercise()">+ Add Exercise</button>
             <span class="muted sm">Add each exercise with sets and reps.</span>
           </div>
@@ -317,7 +322,7 @@
       <div class="sec" id="secPrescription">
         <div class="hd">🤖 Auto-Prescription (Fight Camp / Hybrid)</div>
         <div class="bd">
-          <div class="hint">Log a skill block + HR above, then “Compute Plan.” Uses today HR-load + ACWR to recommend domains.</div>
+          <div class="hint">Log a skill block + HR above, then "Compute Plan." Uses today HR-load + ACWR to recommend domains.</div>
           <div class="row" style="margin:8px 0">
             <button class="btn" onclick="computePrescription()">⚙️ Compute Plan</button>
             <button class="btn ghost" onclick="applyPrescription()">📌 Apply Plan (toggle sections)</button>
@@ -337,11 +342,17 @@
 
   <!-- FIGHT CAMP -->
   <div class="modal" id="campModal">
-    <div class="panel">
-      <div class="row" style="justify-content:space-between">
+    <div class="panel" style="max-height:95vh;overflow-y:auto">
+      <div class="row" style="justify-content:space-between;position:sticky;top:0;background:var(--panel2);z-index:10;padding-bottom:8px">
         <div class="pill">🥊 Fight Camp Baseline Assessment</div>
         <button class="btn" onclick="closeCamp()">✕ Close</button>
       </div>
+      
+      <div class="hint" style="margin:12px 0;padding:12px;background:#0d1714;border:1px solid #1e6a4f;border-radius:8px">
+        <strong>These 4 tests create your complete athletic profile.</strong> Do them at camp start, mid-camp, and 2 weeks before fight.<br>
+        <strong style="color:var(--accent)">NO expensive equipment needed</strong> — just bodyweight, free weights, medicine ball, and assault bike.
+      </div>
+
       <div class="sec"><div class="hd">Camp Setup</div>
         <div class="bd grid2">
           <div><label>Camp length (weeks)</label><input id="fcLen" type="number" min="1" max="52" value="8"></div>
@@ -361,46 +372,227 @@
               <option>Technical → Strength → Conditioning → Power</option>
             </select>
           </div>
-          <div><label>Current fitness level</label>
-            <select id="fcLevel"><option>Beginner</option><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option></select>
+          <div style="grid-column:1/-1">
+            <label>Current fitness level (1=Out of shape, 10=Fight day ready)</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input id="fcLevel" type="range" min="1" max="10" value="5" step="1" style="flex:1" oninput="document.getElementById('fcLevelVal').textContent=this.value">
+              <span id="fcLevelVal" style="font-size:24px;font-weight:900;color:var(--accent);min-width:40px;text-align:center">5</span>
+            </div>
           </div>
         </div>
       </div>
-      <div class="sec"><div class="hd">TEST #1: 3-Minute All-Out Assault Bike</div>
+
+      <!-- TEST #1 -->
+      <div class="sec" style="border-left:4px solid var(--accent)">
+        <div class="hd" style="color:var(--accent)">TEST #1: 3-MINUTE ALL-OUT ASSAULT BIKE</div>
         <div class="bd">
-          <div class="muted sm">Warm-up 5–10 min. MAX effort for 3:00; log average watts and optional HR kinetics.</div>
-          <div class="grid2">
-            <div><label>Average watts (3-min)</label><input id="t1Watts" type="number"></div>
-            <div><label>Peak HR (optional)</label><input id="t1Peak" type="number"></div>
-            <div><label>HR @ 60 s (optional)</label><input id="t1HR60" type="number"></div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT IT MEASURES:</div>
+            <div class="muted">Your gas tank – can you keep pressure on your opponent or do you fade?</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHY IT MATTERS:</div>
+            <div class="muted">
+              • Shows if you'll gas out in round 2-3<br>
+              • Predicts how fast you recover between scrambles<br>
+              • Tracks if your conditioning is improving week-to-week
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">HOW TO DO IT:</div>
+            <div class="muted">
+              1. Warm up 5-10 minutes<br>
+              2. Go MAX EFFORT for entire 3 minutes (should feel impossible at end)<br>
+              3. Record average watts shown on bike console<br>
+              4. Record peak heart rate (if you have HR monitor)<br>
+              5. Wait 60 seconds → record heart rate again (for HRR-60)
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT GOOD LOOKS LIKE:</div>
+            <div class="muted">
+              <strong>Men:</strong> 250+ watts = Elite | 200-249 watts = Good | 150-199 watts = Needs work<br>
+              <strong>Women:</strong> 180+ watts = Elite | 140-179 watts = Good | 100-139 watts = Needs work
+            </div>
+          </div>
+          <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+            <div><label>Average Watts (3-min test)</label><input id="t1Watts" type="number" placeholder="e.g., 245"></div>
+            <div><label>Peak HR (optional)</label><input id="t1Peak" type="number" placeholder="e.g., 185"></div>
+            <div><label>HR at 60 seconds (optional)</label><input id="t1HR60" type="number" placeholder="e.g., 145"></div>
           </div>
         </div>
       </div>
-      <div class="sec"><div class="hd">TEST #2: Med Ball Rotational Throw</div>
+
+      <!-- TEST #2 -->
+      <div class="sec" style="border-left:4px solid #ff7a45">
+        <div class="hd" style="color:#ff9a6b">TEST #2: MED BALL ROTATIONAL THROW</div>
         <div class="bd">
-          <div class="grid2">
-            <div><label>Med ball weight (lb)</label><input id="t2MB" type="number" step="0.5"></div>
-            <div><label>Right distance (ft or 1-10)</label><input id="t2R" type="number" step="0.1"></div>
-            <div><label>Left distance (ft or 1-10)</label><input id="t2L" type="number" step="0.1"></div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT IT MEASURES:</div>
+            <div class="muted">Striking power and explosive hip rotation</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHY IT MATTERS:</div>
+            <div class="muted">
+              • Measures true power (hip-to-hand transfer, NOT just arm strength)<br>
+              • Predicts knockout power and throw explosiveness<br>
+              • Shows left/right imbalances that create injury risk
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">HOW TO DO IT:</div>
+            <div class="muted">
+              1. Use 8-12 lb medicine ball (men) or 6-10 lb (women)<br>
+              2. Stand sideways to wall, 3-4 feet away<br>
+              3. Load hip → rotate explosively → throw ball into wall<br>
+              4. Do 3 max throws each side<br>
+              5. Record best distance ball travels (or rate power 1-10)
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT GOOD LOOKS LIKE:</div>
+            <div class="muted">
+              12+ ft throw = Elite power | 8-11 ft = Good power | 5-7 ft = Developing<br>
+              <10% difference side-to-side = Balanced (good)<br>
+              >20% difference = Injury risk (needs corrective work)
+            </div>
+          </div>
+          <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+            <div><label>Med Ball Weight (lb)</label><input id="t2MB" type="number" step="0.5" placeholder="e.g., 10"></div>
+            <div><label>Right Side (ft or 1-10 rating)</label><input id="t2R" type="number" step="0.1" placeholder="e.g., 10.5"></div>
+            <div><label>Left Side (ft or 1-10 rating)</label><input id="t2L" type="number" step="0.1" placeholder="e.g., 9.8"></div>
           </div>
         </div>
       </div>
-      <div class="sec"><div class="hd">TEST #3: Standing Broad Jump</div>
+
+      <!-- TEST #3 -->
+      <div class="sec" style="border-left:4px solid #00ccff">
+        <div class="hd" style="color:#00ccff">TEST #3: STANDING BROAD JUMP</div>
         <div class="bd">
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT IT MEASURES:</div>
+            <div class="muted">Explosive lower body power for scrambles and takedowns</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHY IT MATTERS:</div>
+            <div class="muted">
+              • Predicts double-leg penetration power<br>
+              • Shows if you can explode out of bad positions<br>
+              • Measures cage pressure and explosive stand-ups
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">HOW TO DO IT:</div>
+            <div class="muted">
+              1. Feet hip-width apart<br>
+              2. Swing arms back → explode forward horizontally<br>
+              3. Land soft and controlled (NO forward stumble)<br>
+              4. Measure heel-to-heel distance<br>
+              5. Take best of 3 attempts
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT GOOD LOOKS LIKE:</div>
+            <div class="muted">
+              <strong>Men:</strong> 9+ ft (108+ in) = Elite | 8-8.9 ft (96-107 in) = Good | 7-7.9 ft (84-95 in) = Average<br>
+              <strong>Women:</strong> 7.5+ ft (90+ in) = Elite | 6.5-7.4 ft (78-89 in) = Good | 5.5-6.4 ft (66-77 in) = Average
+            </div>
+          </div>
           <div class="grid2">
-            <div><label>Best jump distance</label><input id="t3Dist" type="number" step="0.01"></div>
+            <div><label>Best Jump Distance</label><input id="t3Dist" type="number" step="0.01" placeholder="e.g., 8.5"></div>
             <div><label>Unit</label><select id="t3Unit"><option>Feet</option><option>Inches</option><option>Centimeters</option></select></div>
           </div>
         </div>
       </div>
-      <div class="sec"><div class="hd">TEST #4: Strength Base (Choose one)</div>
-        <div class="bd grid2">
-          <div><label>Test type</label><select id="t4Type"><option>Weighted pull-up (3–5RM)</option><option>Trap-bar deadlift (3–5RM)</option></select></div>
-          <div><label>Best 3–5RM load (lb)</label><input id="t4Load" type="number" step="1"></div>
-          <div class="muted" style="grid-column:1/-1;font-size:12px">This anchors strength prescriptions & fatigue management.</div>
+
+      <!-- TEST #4 -->
+      <div class="sec" style="border-left:4px solid #ffbb33">
+        <div class="hd" style="color:#ffbb33">TEST #4: STRENGTH BASE (Choose ONE)</div>
+        <div class="bd">
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT IT MEASURES:</div>
+            <div class="muted">Grappling strength – can you control, pin, drag your opponent?</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHY IT MATTERS:</div>
+            <div class="muted">
+              • Predicts snap-down, underhook, and back control strength<br>
+              • Shows if you can finish takedowns under fatigue<br>
+              • Measures collar tie and clinch pressure
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">HOW TO DO IT:</div>
+            <div class="muted">
+              <strong>Option A: Weighted Pull-Up (3-5RM)</strong><br>
+              • Add weight to belt/vest<br>
+              • Find heaviest weight you can pull for 3-5 clean reps<br>
+              • Dead hang → chin over bar → control down<br><br>
+              <strong>Option B: Trap-Bar Deadlift (3-5RM)</strong><br>
+              • Step inside trap bar, neutral grip<br>
+              • Find heaviest weight for 3-5 reps with perfect form<br>
+              • No rounding, no hitching
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-weight:700;color:#9de8c5;margin-bottom:4px">WHAT GOOD LOOKS LIKE:</div>
+            <div class="muted">
+              <strong>Pull-Up (3-5RM):</strong> BW+90lb = Elite | BW+45-70lb = Good | BW+25lb = Developing<br>
+              <strong>Trap-Bar (3-5RM):</strong> 2.5×BW = Elite | 2×BW = Good | 1.5×BW = Developing
+            </div>
+          </div>
+          <div class="grid2">
+            <div><label>Test Type</label>
+              <select id="t4Type">
+                <option>Weighted pull-up (3–5RM)</option>
+                <option>Trap-bar deadlift (3–5RM)</option>
+              </select>
+            </div>
+            <div><label>Best 3–5RM load (lb)</label><input id="t4Load" type="number" step="1" placeholder="e.g., 315"></div>
+          </div>
+          <div class="muted" style="margin-top:8px;font-size:11px">This anchors strength prescriptions & fatigue management throughout camp.</div>
         </div>
       </div>
-      <div class="row" style="justify-content:flex-end"><button class="btn primary" onclick="saveCamp()">✓ Save Assessment</button></div>
+
+      <!-- AUTO-SCHEDULER -->
+      <div class="sec" style="background:#0d0f1a;border:2px solid var(--accent2)">
+        <div class="hd" style="background:#0f1218;border-bottom:2px solid var(--accent2);color:var(--accent2)">
+          🤖 AUTO-SCHEDULER — Weekly Fight Camp Programming
+        </div>
+        <div class="bd">
+          <div class="hint" style="margin-bottom:16px;padding:12px;background:#0a0e14;border-left:3px solid var(--accent)">
+            <strong style="color:var(--accent)">How it works:</strong> Log your skill sessions (BJJ, sparring, mitts, etc.) with intensity + weight before/after. 
+            The app calculates CNS load and AUTO-GENERATES strength & conditioning recommendations based on your camp priority and training intensity.
+          </div>
+
+          <div id="weekScheduler"></div>
+
+          <div class="row" style="margin-top:16px;justify-content:center">
+            <button class="btn primary" onclick="generateWeekSchedule()">📅 Generate Week Schedule</button>
+            <button class="btn ghost" onclick="printWeekSchedule()">🖨 Print Week</button>
+            <button class="btn ghost" onclick="clearWeekSchedule()">🧹 Clear Schedule</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHEN TO TEST -->
+      <div class="sec" style="background:#1a1f13;border:1px solid #3d5a2b">
+        <div class="hd" style="background:#222b1a;border-bottom:1px solid #3d5a2b;color:#c9e89f">
+          💡 WHEN TO TEST:
+        </div>
+        <div class="bd">
+          <div style="color:#b8d994;line-height:1.7">
+            ✓ Week 1 of camp (baseline)<br>
+            ✓ Mid-camp Week 4-5 (progress check)<br>
+            ✓ 2 weeks before fight (final assessment)
+          </div>
+          <div class="hint" style="margin-top:12px;padding:10px;background:#0f1410;border-left:3px solid #ffbb33">
+            <strong style="color:#ffbb33">These numbers don't lie.</strong> If they're improving, your training is working. If they're flat or dropping, you're overtraining.
+          </div>
+        </div>
+      </div>
+
+      <div class="row sticky" style="justify-content:flex-end;margin-top:16px;padding-top:12px"><button class="btn primary" onclick="saveCamp()">✓ Save Assessment</button></div>
     </div>
   </div>
 
@@ -456,6 +648,25 @@
         <button class="btn" onclick="hideErr()">Close</button>
       </div>
       <pre id="errText">—</pre>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE TRAINING LOGGER -->
+  <div class="modal" id="trainingLoggerModal">
+    <div class="panel" style="max-height:95vh;overflow-y:auto">
+      <div class="row" style="justify-content:space-between;position:sticky;top:0;background:var(--panel2);z-index:10;padding-bottom:8px">
+        <div class="pill">▶️ TRAINING IN PROGRESS</div>
+        <button class="btn" onclick="closeTrainingLogger()">✕ Close</button>
+      </div>
+      
+      <div id="trainingLoggerContent"></div>
+      
+      <div class="sticky" style="margin-top:16px">
+        <div class="row" style="justify-content:space-between">
+          <div class="muted sm" id="loggerNote">Complete exercises and mark them as done</div>
+          <button class="btn primary" onclick="finishTraining()">✓ FINISH & SAVE TRAINING</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -552,6 +763,20 @@ function dayCell(date,other,todayStr){
   const key=toKey(date); if(key===todayStr) el.classList.add('today');
   const num=document.createElement('div'); num.className='num'; num.textContent=date.getDate(); el.appendChild(num);
   const day=store[key];
+  
+  // Check for scheduled sessions
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const hasSchedule = weekScheduleData[key] && weekScheduleData[key].sessions && weekScheduleData[key].sessions.length > 0;
+  
+  if(hasSchedule){
+    const scheduleIndicator = document.createElement('span');
+    scheduleIndicator.className = 'badge';
+    scheduleIndicator.textContent = '📅 SCHEDULED';
+    scheduleIndicator.style.background = '#1a3a1a';
+    scheduleIndicator.style.color = '#7bed9f';
+    el.appendChild(scheduleIndicator);
+  }
+  
   if(day?.modalities){
     Object.keys(day.modalities).forEach(k=>{const b=document.createElement('span'); b.className='badge'; b.textContent=k.toUpperCase(); el.appendChild(b);});
     const c=document.createElement('div');
@@ -619,7 +844,7 @@ function toggleSection(id){const el=document.getElementById(id); el.style.displa
 function initStrength(targetId){
   const box=document.getElementById(targetId);
   box.innerHTML=`
-    <div class="row" style="margin-bottom:6px">
+    <div class="row sticky-top" style="margin-bottom:6px">
       <button class="btn primary" onclick="addExercise('${targetId}')">+ Add Exercise</button>
       <div class="muted sm">Pyramid sets light → heavy if you like. Choose muscle group for each exercise.</div>
     </div>
@@ -987,6 +1212,9 @@ function saveDay(){
     store[curKey]=day; LS.set('elite_days',store);
     hist.push({d:curKey,tss:day.tss}); if(hist.length>56) hist.shift(); LS.set('elite_tss',hist);
     setKPIs(day); document.getElementById('saveNote').textContent='Saved ✓'; renderCal();
+    
+    // AUTO-CLOSE THE MODAL AFTER SAVING
+    setTimeout(()=>{ closeDay(); }, 500);
   }catch(e){ showErr('saveDay() failed:\n'+(e&&e.stack||e)); }
 }
 
@@ -1015,20 +1243,1415 @@ document.getElementById('weeklyBtn').onclick=()=>{
   weekModal.classList.add('show');
 };
 
+/* ========= ELITE PERFORMANCE PROTOCOLS & VOLUME LANDMARKS ========= */
+
+// Evidence-Based Weekly Volume Landmarks (total reps per week)
+const ELITE_VOLUMES = {
+  pushing: { min: 60, optimal: 90, max: 120 },      // Chest/Shoulders/Triceps
+  pulling: { min: 80, optimal: 115, max: 150 },     // Back/Biceps (grappling priority)
+  lower: { min: 40, optimal: 60, max: 80 },         // Quads/Hams/Glutes
+  power: { min: 30, optimal: 45, max: 60 },         // Quality explosive reps
+  conditioning: { min: 150, optimal: 200, max: 250 } // Total minutes per week
+};
+
+// Periodization Phases
+function getElitePeriodizationPhase(fitnessLevel, campWeek, campLength){
+  // Fitness level overrides week-based if set
+  if(fitnessLevel){
+    if(fitnessLevel <= 3) return 'base';           // 1-3: Out of shape → Base building
+    if(fitnessLevel <= 6) return 'strength';       // 4-6: Developing → Strength/Power
+    if(fitnessLevel <= 8) return 'maintenance';    // 7-8: Fight shape → Maintenance
+    return 'taper';                                // 9-10: Fight ready → Taper/Peak
+  }
+  
+  // Fall back to week-based if no fitness level
+  if(!campWeek || !campLength) return 'strength';
+  const weeksOut = campLength - campWeek + 1;
+  if(weeksOut <= 1) return 'peak';
+  if(weeksOut <= 2) return 'taper';
+  if(weeksOut <= 4) return 'maintenance';
+  if(weeksOut <= 6) return 'strength';
+  return 'base';
+}
+
+// Elite Performance Volume Distribution by Phase
+function getEliteVolumeTargets(phase){
+  switch(phase){
+    case 'base':
+      return {
+        pushing: 100, pulling: 130, lower: 70, power: 35, conditioning: 220,
+        intensity: 'moderate', focus: 'Work capacity & volume tolerance'
+      };
+    case 'strength':
+      return {
+        pushing: 90, pulling: 120, lower: 65, power: 50, conditioning: 180,
+        intensity: 'high', focus: 'Max strength & power development'
+      };
+    case 'maintenance':
+      return {
+        pushing: 70, pulling: 90, lower: 50, power: 40, conditioning: 160,
+        intensity: 'moderate-high', focus: 'Maintain gains, skill priority'
+      };
+    case 'taper':
+      return {
+        pushing: 45, pulling: 60, lower: 30, power: 30, conditioning: 120,
+        intensity: 'high', focus: 'Reduce volume, maintain intensity'
+      };
+    case 'peak':
+      return {
+        pushing: 25, pulling: 35, lower: 20, power: 20, conditioning: 80,
+        intensity: 'sharp', focus: 'Neural priming, stay fresh'
+      };
+    default:
+      return getUFCPIVolumeTargets('strength');
+  }
+}
+
+/* ========= MMA S&C Exercise Library (UFC PI Approved) ========= */
+const MMA_EXERCISES = {
+  // PULLING (Grappling Priority - UFC PI emphasizes this)
+  pulling_primary: [
+    {name: 'Weighted Pull-Up', muscleGroup: 'pulling', repsPerSet: 5, cns: 'High', notes: 'King of grappling strength'},
+    {name: 'Trap-Bar Deadlift', muscleGroup: 'pulling', repsPerSet: 5, cns: 'Very High', notes: 'Total body pulling power'},
+    {name: 'Pendlay Row', muscleGroup: 'pulling', repsPerSet: 6, cns: 'High', notes: 'Explosive pulling from floor'}
+  ],
+  pulling_accessory: [
+    {name: 'One-Arm DB Row', muscleGroup: 'pulling', repsPerSet: 8, cns: 'Moderate'},
+    {name: 'Chest-Supported Row', muscleGroup: 'pulling', repsPerSet: 10, cns: 'Moderate'},
+    {name: 'Neutral-Grip Pull-Up', muscleGroup: 'pulling', repsPerSet: 8, cns: 'Moderate'},
+    {name: 'Inverted Row', muscleGroup: 'pulling', repsPerSet: 12, cns: 'Low'},
+    {name: 'Band Pull-Apart', muscleGroup: 'pulling', repsPerSet: 15, cns: 'Very Low'}
+  ],
+  
+  // PUSHING (Striking Power)
+  pushing_primary: [
+    {name: 'Barbell Bench Press', muscleGroup: 'pushing', repsPerSet: 5, cns: 'High', notes: 'Max upper body pressing'},
+    {name: 'Landmine Press', muscleGroup: 'pushing', repsPerSet: 6, cns: 'Moderate-High', notes: 'Anti-rotation + pressing'},
+    {name: 'Weighted Dip', muscleGroup: 'pushing', repsPerSet: 6, cns: 'High', notes: 'Tricep + chest power'}
+  ],
+  pushing_accessory: [
+    {name: 'Single-Arm Landmine Press', muscleGroup: 'pushing', repsPerSet: 8, cns: 'Moderate'},
+    {name: 'DB Floor Press', muscleGroup: 'pushing', repsPerSet: 8, cns: 'Moderate'},
+    {name: 'Push-Up (Weighted)', muscleGroup: 'pushing', repsPerSet: 10, cns: 'Moderate'},
+    {name: 'Pike Push-Up', muscleGroup: 'pushing', repsPerSet: 10, cns: 'Low'},
+    {name: 'Push-Up (Bodyweight)', muscleGroup: 'pushing', repsPerSet: 15, cns: 'Low'}
+  ],
+  
+  // LOWER BODY (Takedowns, Cage Pressure, Scrambles)
+  lower_primary: [
+    {name: 'Back Squat', muscleGroup: 'lower', repsPerSet: 5, cns: 'Very High', notes: 'Max lower body strength'},
+    {name: 'Front Squat', muscleGroup: 'lower', repsPerSet: 5, cns: 'High', notes: 'Upright torso for MMA'},
+    {name: 'Trap-Bar Deadlift', muscleGroup: 'lower', repsPerSet: 5, cns: 'Very High', notes: 'Hip hinge power'}
+  ],
+  lower_accessory: [
+    {name: 'Bulgarian Split Squat', muscleGroup: 'lower', repsPerSet: 8, cns: 'Moderate', notes: 'Single-leg stability'},
+    {name: 'Romanian Deadlift', muscleGroup: 'lower', repsPerSet: 8, cns: 'Moderate', notes: 'Hamstring/glute focus'},
+    {name: 'Goblet Squat', muscleGroup: 'lower', repsPerSet: 10, cns: 'Moderate'},
+    {name: 'Walking Lunge', muscleGroup: 'lower', repsPerSet: 10, cns: 'Moderate'},
+    {name: 'Step-Up', muscleGroup: 'lower', repsPerSet: 10, cns: 'Low'}
+  ],
+  
+  // POWER (UFC PI Priority - Explosive Striking/Takedowns)
+  power_primary: [
+    {name: 'Box Jump', muscleGroup: 'power', repsPerSet: 3, cns: 'High', notes: 'Max height, full recovery'},
+    {name: 'Broad Jump', muscleGroup: 'power', repsPerSet: 3, cns: 'High', notes: 'Horizontal explosion'},
+    {name: 'Med Ball Slam', muscleGroup: 'power', repsPerSet: 5, cns: 'High', notes: 'Overhead power'},
+    {name: 'Med Ball Rotational Throw', muscleGroup: 'power', repsPerSet: 5, cns: 'High', notes: 'Striking power transfer'}
+  ],
+  power_accessory: [
+    {name: 'Pogo Hop', muscleGroup: 'power', repsPerSet: 8, cns: 'Moderate', notes: 'Reactive strength'},
+    {name: 'Single-Leg Bound', muscleGroup: 'power', repsPerSet: 6, cns: 'Moderate'},
+    {name: 'Med Ball Chest Pass', muscleGroup: 'power', repsPerSet: 8, cns: 'Moderate'}
+  ],
+  
+  // CORE (Anti-Rotation Critical for MMA)
+  core_primary: [
+    {name: 'Pallof Press', muscleGroup: 'core', repsPerSet: 10, cns: 'Moderate', notes: 'Anti-rotation king'},
+    {name: 'Landmine Rainbow', muscleGroup: 'core', repsPerSet: 8, cns: 'Moderate', notes: 'Rotational control'},
+    {name: 'Hanging Leg Raise', muscleGroup: 'core', repsPerSet: 10, cns: 'Moderate', notes: 'Grip + core'}
+  ],
+  core_accessory: [
+    {name: 'Dead Bug', muscleGroup: 'core', repsPerSet: 10, cns: 'Low', notes: 'Anti-extension'},
+    {name: 'Bird Dog', muscleGroup: 'core', repsPerSet: 10, cns: 'Low'},
+    {name: 'Plank (Weighted)', muscleGroup: 'core', repsPerSet: '45s', cns: 'Low'}
+  ],
+  
+  // CONDITIONING (UFC PI 80/20 Rule - 80% Z2, 20% High Intensity)
+  conditioning_z2: [
+    {name: 'Assault Bike Z2', protocol: 'Steady @ 65-75% max HR', duration: [20,25,30,35,40], zone: 'Z2'},
+    {name: 'Rower Z2', protocol: 'Steady @ 65-75% max HR', duration: [20,25,30,35,40], zone: 'Z2'},
+    {name: 'Incline Walk', protocol: '3.5-4.0 mph, 10-15% grade', duration: [25,30,35,40], zone: 'Z2'}
+  ],
+  conditioning_intervals: [
+    {name: 'Assault Bike Intervals', protocol: '10×30s hard / 30s easy', duration: 10, intensity: 'High'},
+    {name: 'Assault Bike Tabata', protocol: '8×20s max / 10s rest', duration: 4, intensity: 'Very High'},
+    {name: 'Rower Intervals', protocol: '6×2min / 2min easy', duration: 24, intensity: 'Moderate-High'},
+    {name: 'Prowler Push', protocol: '8×30m heavy', duration: 15, intensity: 'Very High'},
+    {name: 'Sled Drag', protocol: '6×40m moderate', duration: 15, intensity: 'Moderate'}
+  ],
+  
+  // RECOVERY
+  recovery: [
+    {name: 'Foam Rolling', duration: [10,15]},
+    {name: 'Dynamic Mobility', duration: [10,15]},
+    {name: 'Yoga Flow', duration: [20,30]},
+    {name: 'Breathing Work', duration: [10,15]}
+  ]
+};
+
+/* ========= UFC PI Volume Calculation ========= */
+function calculateWeeklyVolume(dayWorkouts){
+  // Sum up all reps by muscle group across the week
+  let volumes = {pushing: 0, pulling: 0, lower: 0, power: 0, conditioning: 0};
+  
+  // This will be called with all 7 days of workouts
+  dayWorkouts.forEach(day => {
+    if(day && day.exercises){
+      day.exercises.forEach(ex => {
+        if(ex.muscleGroup && ex.sets && ex.reps){
+          const totalReps = ex.sets * ex.reps;
+          volumes[ex.muscleGroup] = (volumes[ex.muscleGroup] || 0) + totalReps;
+        }
+      });
+    }
+    if(day && day.conditioning){
+      volumes.conditioning += day.conditioning.duration || 0;
+    }
+  });
+  
+  return volumes;
+}
+
+function isDeloadWeek(campWeek){
+  // Deload every 4th week if not in taper/peak phase
+  return campWeek > 0 && campWeek % 4 === 0;
+}
+
+/* ========= Auto-Scheduler for Fight Camp ========= */
+function generateWeekSchedule(){
+  const container = document.getElementById('weekScheduler');
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  
+  // Check if Fight Camp mode is active
+  const campData = LS.get('elite_camp', {});
+  const profileData = LS.get('elite_profile', {});
+  const usingFightCamp = !!campData.order;
+  const activePriority = campData.order || profileData.priority || 'Balanced (All domains equally)';
+  
+  let html = '';
+  
+  // Show active mode indicator
+  if(usingFightCamp){
+    html += `
+      <div style="padding:12px;margin-bottom:16px;background:#0d1714;border:2px solid var(--accent);border-radius:8px">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:4px">🥊 FIGHT CAMP MODE ACTIVE</div>
+        <div class="muted">Using Fight Camp priority: <strong style="color:#fff">${activePriority}</strong></div>
+        <div class="muted" style="margin-top:4px;font-size:11px">Fitness Level: ${campData.level || 5}/10 | Week ${campData.wk || 1} of ${campData.len || 8}</div>
+      </div>`;
+  } else {
+    html += `
+      <div style="padding:12px;margin-bottom:16px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px">
+        <div style="font-weight:700;color:#9fb2c7;margin-bottom:4px">📋 REGULAR TRAINING MODE</div>
+        <div class="muted">Using Profile priority: <strong style="color:#fff">${activePriority}</strong></div>
+        <div class="muted" style="margin-top:4px;font-size:11px">Tip: Set up Fight Camp Assessment to activate Fight Camp priority system</div>
+      </div>`;
+  }
+  
+  days.forEach((day,idx) => {
+    html += `
+      <div class="sec" style="margin-bottom:12px;border-left:3px solid var(--accent)">
+        <div class="hd" style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--accent)">${day}</span>
+          <div class="row" style="gap:6px">
+            <button class="btn" style="padding:6px 10px;font-size:11px" onclick="addSession('day${idx}',1)">+ Session</button>
+            <button class="btn ghost" style="padding:6px 10px;font-size:11px" onclick="clearDay('day${idx}')">Clear</button>
+          </div>
+        </div>
+        <div class="bd" id="day${idx}">
+          <div class="muted sm">Click "+ Session" to add skill training sessions (1-3 per day)</div>
+        </div>
+        <div id="day${idx}-recommendations" style="margin-top:12px;padding:12px;background:#0a0e14;border-radius:8px;display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-weight:700;color:#00ccff">🎯 AUTO-GENERATED S&C FOR TODAY:</div>
+            <div class="row" style="gap:6px">
+              <button class="btn primary" style="padding:6px 12px;font-size:12px" onclick="startTraining('day${idx}')">▶️ START TRAINING</button>
+              <button class="btn ghost" style="padding:4px 10px;font-size:11px" onclick="toggleManualOverride('day${idx}')">✏️ Manual Override</button>
+            </div>
+          </div>
+          <div id="day${idx}-rec-text" class="muted"></div>
+          <div id="day${idx}-manual" style="display:none;margin-top:12px;padding:12px;background:#0d0f1a;border:1px solid var(--accent);border-radius:8px">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:8px">✏️ MANUAL WORKOUT OVERRIDE</div>
+            <textarea id="day${idx}-manual-text" style="width:100%;min-height:150px;font-family:monospace;font-size:12px" placeholder="Enter your custom workout here...
+Example:
+1. Weighted Pull-Up: 4×5 @ RPE 8
+2. Barbell Bench: 5×5 @ RPE 8-9
+3. Bulgarian Split Squat: 3×8/leg
+4. Assault Bike: 10×30/30"></textarea>
+            <div class="row" style="margin-top:8px;gap:6px">
+              <button class="btn primary" style="padding:6px 12px;font-size:12px" onclick="saveManualWorkout('day${idx}')">💾 Save Manual Workout</button>
+              <button class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="clearManualWorkout('day${idx}')">↩️ Revert to Auto</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+function addSession(dayId, sessionNum){
+  const dayContainer = document.getElementById(dayId);
+  const existingSessions = dayContainer.querySelectorAll('.session-card');
+  
+  if(existingSessions.length >= 3){
+    alert('Maximum 3 sessions per day');
+    return;
+  }
+  
+  // Remove initial message if it exists
+  const initialMsg = dayContainer.querySelector('.muted');
+  if(initialMsg) initialMsg.remove();
+  
+  const sessionCard = document.createElement('div');
+  sessionCard.className = 'session-card';
+  sessionCard.style.cssText = 'background:var(--panel);padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px';
+  
+  sessionCard.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-weight:700;color:var(--accent2)">Session ${existingSessions.length + 1}</span>
+      <button class="btn" style="padding:4px 8px;font-size:11px" onclick="this.closest('.session-card').remove();computeDayRecommendation('${dayId}')">Remove</button>
+    </div>
+    <div class="grid2" style="grid-template-columns:repeat(2,1fr);gap:8px">
+      <div>
+        <label>⏰ Start Time</label>
+        <input type="time" class="session-time" value="06:00" style="font-size:14px">
+      </div>
+      <div>
+        <label>Skill Type</label>
+        <select class="skill-type" onchange="computeDayRecommendation('${dayId}');cascadeRecalculation('${dayId}')">
+          <option value="">Choose...</option>
+          <option value="BJJ">BJJ / Grappling</option>
+          <option value="Boxing">Boxing</option>
+          <option value="Muay Thai">Muay Thai</option>
+          <option value="Wrestling">Wrestling</option>
+          <option value="Sparring">Sparring (hard)</option>
+          <option value="Mitts">Mitt Work</option>
+          <option value="Bag">Heavy Bag</option>
+          <option value="Drilling">Technical Drilling</option>
+          <option value="Shadowboxing">Shadowboxing</option>
+        </select>
+      </div>
+      <div>
+        <label>Intensity</label>
+        <select class="skill-intensity" onchange="computeDayRecommendation('${dayId}');cascadeRecalculation('${dayId}')">
+          <option value="">Choose...</option>
+          <option value="Light">Light (Tech/Flow)</option>
+          <option value="Medium">Medium (Moderate)</option>
+          <option value="Hard">Hard (Competitive)</option>
+          <option value="Max">Max (Fight Pace)</option>
+        </select>
+      </div>
+      <div>
+        <label>Duration (min)</label>
+        <input type="number" class="skill-duration" min="5" step="5" placeholder="e.g., 60" onchange="computeDayRecommendation('${dayId}');cascadeRecalculation('${dayId}')">
+      </div>
+      <div>
+        <label>Weight Before (lb)</label>
+        <input type="number" class="weight-before" step="0.1" placeholder="e.g., 180.5" onchange="computeDayRecommendation('${dayId}');cascadeRecalculation('${dayId}')">
+      </div>
+      <div>
+        <label>Weight After (lb)</label>
+        <input type="number" class="weight-after" step="0.1" placeholder="e.g., 178.2" onchange="computeDayRecommendation('${dayId}');cascadeRecalculation('${dayId}')">
+      </div>
+    </div>`;
+  
+  dayContainer.appendChild(sessionCard);
+  computeDayRecommendation(dayId);
+  
+  // Trigger cascade recalculation for all following days
+  cascadeRecalculation(dayId);
+}
+
+function computeDayRecommendation(dayId){
+  const dayContainer = document.getElementById(dayId);
+  const sessions = dayContainer.querySelectorAll('.session-card');
+  
+  if(sessions.length === 0){
+    const recDiv = document.getElementById(dayId + '-recommendations');
+    if(recDiv) recDiv.style.display = 'none';
+    return;
+  }
+  
+  // Calculate total load from all sessions TODAY
+  let totalCNS = 0;
+  let totalDuration = 0;
+  let maxIntensity = '';
+  let totalWeightLoss = 0;
+  let hasData = false;
+  
+  sessions.forEach(session => {
+    const type = session.querySelector('.skill-type').value;
+    const intensity = session.querySelector('.skill-intensity').value;
+    const duration = fmt(session.querySelector('.skill-duration').value);
+    const wBefore = fmt(session.querySelector('.weight-before').value);
+    const wAfter = fmt(session.querySelector('.weight-after').value);
+    
+    if(type && intensity && duration > 0){
+      hasData = true;
+      totalDuration += duration;
+      
+      // Calculate CNS load based on intensity and type
+      let sessionCNS = 0;
+      const intensityMultiplier = {
+        'Light': 0.5,
+        'Medium': 0.75,
+        'Hard': 1.0,
+        'Max': 1.3
+      }[intensity] || 0.5;
+      
+      const typeMultiplier = {
+        'Sparring': 1.5,
+        'Wrestling': 1.4,
+        'BJJ': 1.3,
+        'Muay Thai': 1.2,
+        'Boxing': 1.1,
+        'Mitts': 0.8,
+        'Bag': 0.9,
+        'Drilling': 0.6,
+        'Shadowboxing': 0.5
+      }[type] || 1.0;
+      
+      sessionCNS = (duration / 60) * 50 * intensityMultiplier * typeMultiplier;
+      totalCNS += sessionCNS;
+      
+      // Track max intensity
+      if(!maxIntensity || (intensityMultiplier > ({'Light':0.5,'Medium':0.75,'Hard':1.0,'Max':1.3}[maxIntensity]||0))){
+        maxIntensity = intensity;
+      }
+      
+      // Weight loss
+      if(wBefore > 0 && wAfter > 0){
+        totalWeightLoss += (wBefore - wAfter);
+      }
+    }
+  });
+  
+  if(!hasData){
+    const recDiv = document.getElementById(dayId + '-recommendations');
+    if(recDiv) recDiv.style.display = 'none';
+    return;
+  }
+  
+  // ========= CUMULATIVE FATIGUE CALCULATION =========
+  // Get current day index (0=Monday, 6=Sunday)
+  const dayIndex = parseInt(dayId.replace('day', ''));
+  
+  // Calculate residual fatigue from previous days
+  let residualCNS = 0;
+  let residualWeightLoss = 0;
+  let previousHighIntensityDays = 0;
+  
+  for(let i = 0; i < dayIndex; i++){
+    const prevDayId = 'day' + i;
+    const prevDayContainer = document.getElementById(prevDayId);
+    if(!prevDayContainer) continue;
+    
+    const prevSessions = prevDayContainer.querySelectorAll('.session-card');
+    let prevDayCNS = 0;
+    let prevDayWeightLoss = 0;
+    let prevDayMaxIntensity = '';
+    
+    prevSessions.forEach(session => {
+      const type = session.querySelector('.skill-type').value;
+      const intensity = session.querySelector('.skill-intensity').value;
+      const duration = fmt(session.querySelector('.skill-duration').value);
+      const wBefore = fmt(session.querySelector('.weight-before').value);
+      const wAfter = fmt(session.querySelector('.weight-after').value);
+      
+      if(type && intensity && duration > 0){
+        const intensityMult = {'Light':0.5,'Medium':0.75,'Hard':1.0,'Max':1.3}[intensity] || 0.5;
+        const typeMult = {'Sparring':1.5,'Wrestling':1.4,'BJJ':1.3,'Muay Thai':1.2,'Boxing':1.1,'Mitts':0.8,'Bag':0.9,'Drilling':0.6,'Shadowboxing':0.5}[type] || 1.0;
+        prevDayCNS += (duration / 60) * 50 * intensityMult * typeMult;
+        
+        if(!prevDayMaxIntensity || intensityMult > ({'Light':0.5,'Medium':0.75,'Hard':1.0,'Max':1.3}[prevDayMaxIntensity]||0)){
+          prevDayMaxIntensity = intensity;
+        }
+        
+        if(wBefore > 0 && wAfter > 0){
+          prevDayWeightLoss += (wBefore - wAfter);
+        }
+      }
+    });
+    
+    // CNS recovery rate depends on how many days ago + intensity
+    const daysAgo = dayIndex - i;
+    let recoveryRate = 0;
+    
+    if(prevDayMaxIntensity === 'Max' || prevDayMaxIntensity === 'Hard'){
+      // High intensity = slower recovery (48-72h for full recovery)
+      if(daysAgo === 1) recoveryRate = 0.60; // 60% still fatigued next day
+      else if(daysAgo === 2) recoveryRate = 0.30; // 30% fatigue 2 days later
+      else if(daysAgo === 3) recoveryRate = 0.15; // 15% fatigue 3 days later
+      else recoveryRate = 0.05; // minimal after 4+ days
+      
+      if(prevDayMaxIntensity === 'Max' || prevDayMaxIntensity === 'Hard'){
+        previousHighIntensityDays++;
+      }
+    } else if(prevDayMaxIntensity === 'Medium'){
+      // Medium intensity = moderate recovery (24-36h)
+      if(daysAgo === 1) recoveryRate = 0.40; // 40% fatigue next day
+      else if(daysAgo === 2) recoveryRate = 0.15; // 15% fatigue 2 days later
+      else recoveryRate = 0.05;
+    } else {
+      // Light intensity = fast recovery (12-24h)
+      if(daysAgo === 1) recoveryRate = 0.20; // 20% fatigue next day
+      else recoveryRate = 0.05;
+    }
+    
+    residualCNS += prevDayCNS * recoveryRate;
+    residualWeightLoss += prevDayWeightLoss * (daysAgo === 1 ? 0.3 : 0); // dehydration mostly recovered after 1 day
+  }
+  
+  // TOTAL CUMULATIVE LOAD = Today's training + Residual from previous days
+  const cumulativeCNS = totalCNS + residualCNS;
+  const cumulativeWeightLoss = totalWeightLoss + residualWeightLoss;
+  
+  // Calculate weekly ACWR-style ratio (acute vs chronic)
+  const weeklyTotalCNS = totalCNS + residualCNS;
+  
+  // Get camp priority - FIGHT CAMP OVERRIDES REGULAR PROFILE
+  const campData = LS.get('elite_camp', {});
+  const profileData = LS.get('elite_profile', {});
+  
+  // Use Fight Camp priority if it exists, otherwise fall back to profile
+  const priority = (campData.order || profileData.priority || 'Balanced (All domains equally)').toLowerCase();
+  const fitnessLevel = campData.level || 5; // 1-10 scale from Fight Camp
+  
+  // If Fight Camp is active, show indicator
+  const usingFightCamp = !!campData.order;
+  
+  // Generate recommendations based on CUMULATIVE CNS load and priority
+  let recommendations = [];
+  let fatigueWarning = '';
+  
+  // CRITICAL: Check for overtraining signals
+  if(previousHighIntensityDays >= 3){
+    fatigueWarning = '🚨 <strong style="color:#ff6b6b">OVERTRAINING RISK</strong> — 3+ high-intensity days this week!';
+  } else if(cumulativeCNS >= 120){
+    fatigueWarning = '⚠️ <strong style="color:#ffbb33">HIGH CUMULATIVE FATIGUE</strong> — CNS is heavily taxed from previous days';
+  } else if(residualCNS >= 40){
+    fatigueWarning = '⚡ <strong style="color:#ffbb33">MODERATE RESIDUAL FATIGUE</strong> — Still recovering from previous training';
+  }
+  
+  if(fatigueWarning){
+    recommendations.push(fatigueWarning);
+  }
+  
+  // Get periodization phase using Elite Performance logic
+  const phase = getElitePeriodizationPhase(fitnessLevel, campData.wk, campData.len);
+  const volumeTargets = getEliteVolumeTargets(phase);
+  const isDeload = isDeloadWeek(campData.wk);
+  
+  // Add phase indicator with UFC PI info
+  const phaseLabels = {
+    'peak': `🎯 PEAK / FIGHT WEEK — ${volumeTargets.focus}`,
+    'taper': `📉 TAPER PHASE — ${volumeTargets.focus}`,
+    'maintenance': `⚖️ MAINTENANCE PHASE — ${volumeTargets.focus}`,
+    'strength': `💪 STRENGTH/POWER PHASE — ${volumeTargets.focus}`,
+    'base': `🏗️ BASE BUILDING — ${volumeTargets.focus}`
+  };
+  
+  if(phase){
+    recommendations.push(`<div style="padding:10px;background:#0d1714;border-left:3px solid var(--accent);margin-bottom:10px">
+      <strong>${phaseLabels[phase] || phase.toUpperCase()}</strong>${campData.wk ? ` (Week ${campData.wk}/${campData.len})` : ''}
+      <div class="muted" style="margin-top:4px;font-size:11px">
+        Weekly Targets: Pulling ${volumeTargets.pulling} reps | Pushing ${volumeTargets.pushing} reps | Lower ${volumeTargets.lower} reps | Power ${volumeTargets.power} reps | Conditioning ${volumeTargets.conditioning} min/week
+      </div>
+    </div>`);
+  }
+  
+  if(isDeload && !['peak','taper'].includes(phase)){
+    recommendations.push('🔄 <strong style="color:#00ccff">DELOAD WEEK</strong> — Reduce volume by 40%, promote recovery<br>');
+  }
+  
+  // Generate EXACT workout using Evidence-Based protocols
+  let workout = generateEliteWorkout(cumulativeCNS, maxIntensity, priority, phase, volumeTargets, isDeload, residualCNS);
+  
+  recommendations.push('<div style="margin-top:12px;padding:12px;background:#0a0e14;border:1px solid var(--accent2);border-radius:8px">');
+  recommendations.push('<div style="font-weight:700;color:var(--accent2);margin-bottom:8px">📋 TODAY\'S EXACT WORKOUT (Evidence-Based Protocols):</div>');
+  recommendations.push(workout);
+  recommendations.push('</div>');
+  
+  // Add detailed stats
+  recommendations.push(`
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;line-height:1.6">
+      <strong>Today's Stats:</strong><br>
+      • Today CNS: ${Math.round(totalCNS)} | Duration: ${totalDuration} min | Weight loss: ${totalWeightLoss.toFixed(1)} lb<br>
+      <strong style="color:var(--accent2)">Cumulative Impact:</strong><br>
+      • Residual CNS from previous days: ${Math.round(residualCNS)}<br>
+      • <strong>TOTAL Cumulative CNS: ${Math.round(cumulativeCNS)}</strong><br>
+      • High-intensity days this week: ${previousHighIntensityDays}${usingFightCamp ? '<br>• <strong style="color:var(--accent)">🥊 FIGHT CAMP MODE ACTIVE</strong>' : ''}
+    </div>`);
+  
+  // Display recommendations
+  const recDiv = document.getElementById(dayId + '-recommendations');
+  const recText = document.getElementById(dayId + '-rec-text');
+  if(recDiv && recText){
+    recText.innerHTML = recommendations.join('<br>');
+    recDiv.style.display = 'block';
+  }
+  
+  // Save schedule data for calendar display
+  saveScheduleToCalendar(dayId, {
+    skillSessions: Array.from(sessions).map(s => ({
+      time: s.querySelector('.session-time')?.value || '06:00',
+      type: s.querySelector('.skill-type')?.value || 'Training',
+      duration: fmt(s.querySelector('.skill-duration')?.value) || 0,
+      intensity: s.querySelector('.skill-intensity')?.value || ''
+    })),
+    scWorkout: recommendations.join('<br>')
+  });
+}
+
+function saveScheduleToCalendar(dayId, scheduleData){
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  
+  // Convert dayId to date key (day0 = Monday)
+  const dayIndex = parseInt(dayId.replace('day', ''));
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - today.getDay() + 1); // Get Monday of current week
+  const targetDate = new Date(monday);
+  targetDate.setDate(monday.getDate() + dayIndex);
+  const dateKey = toKey(targetDate);
+  
+  weekScheduleData[dateKey] = {
+    sessions: scheduleData.skillSessions.concat([{
+      time: scheduleData.skillSessions.length > 0 ? 
+        (parseInt(scheduleData.skillSessions[scheduleData.skillSessions.length-1].time.split(':')[0]) + 2) + ':00' : 
+        '10:00',
+      type: 'Strength & Conditioning',
+      duration: 45,
+      workout: scheduleData.scWorkout
+    }])
+  };
+  
+  LS.set('elite_week_schedule', weekScheduleData);
+  
+  // Refresh calendar to show schedule indicator
+  renderCal();
+}
+
+function clearWeekSchedule(){
+  if(confirm('Clear entire week schedule?')){
+    generateWeekSchedule();
+  }
+}
+
+/* ========= Exact Workout Generator ========= */
+/* ========= Elite Performance Workout Generator ========= */
+function generateEliteWorkout(cumulativeCNS, maxIntensity, priority, phase, volumeTargets, isDeload, residualCNS){
+  let workout = [];
+  
+  // Determine training capacity based on cumulative load
+  let capacity = 'full';
+  if(cumulativeCNS >= 120 || (maxIntensity === 'Max' && cumulativeCNS >= 90)){
+    capacity = 'recovery';
+  } else if(cumulativeCNS >= 90){
+    capacity = 'active_recovery';
+  } else if(cumulativeCNS >= 70){
+    capacity = 'very_light';
+  } else if(cumulativeCNS >= 50){
+    capacity = 'light';
+  } else if(cumulativeCNS >= 30){
+    capacity = 'moderate';
+  }
+  
+  // Apply deload override
+  if(isDeload && capacity === 'full'){
+    capacity = 'light';
+  }
+  
+  // ===== RECOVERY PROTOCOLS =====
+  if(capacity === 'recovery'){
+    workout.push('<div style="color:#ff6b6b;font-weight:700;margin-bottom:8px">🛑 MANDATORY RECOVERY DAY</div>');
+    workout.push('<strong>Option A: Complete Rest</strong><br>');
+    workout.push('• No training today<br>');
+    workout.push('• Focus: Sleep 8-9h, hydration, nutrition<br><br>');
+    workout.push('<strong>Option B: Light Mobility (if you must move)</strong><br>');
+    const recovery = MMA_EXERCISES.recovery;
+    workout.push(`• ${recovery[1].name}: ${recovery[1].duration[0]}-${recovery[1].duration[1]} min<br>`);
+    workout.push(`• ${recovery[3].name}: ${recovery[3].duration[0]}-${recovery[3].duration[1]} min`);
+    return workout.join('');
+  }
+  
+  if(capacity === 'active_recovery'){
+    workout.push('<div style="color:#ffbb33;font-weight:700;margin-bottom:8px">🛑 ACTIVE RECOVERY ONLY</div>');
+    const recovery = MMA_EXERCISES.recovery;
+    workout.push(`<strong>1. Easy Movement (Z1-Z2)</strong><br>`);
+    workout.push(`   • 20-30 min walk or very easy bike<br>`);
+    workout.push(`   • RPE: 3-4/10 (conversational pace)<br><br>`);
+    workout.push(`<strong>2. ${recovery[1].name}</strong><br>`);
+    workout.push(`   • Duration: ${recovery[1].duration[0]}-${recovery[1].duration[1]} min<br><br>`);
+    workout.push(`<strong>3. ${recovery[0].name}</strong><br>`);
+    workout.push(`   • Duration: ${recovery[0].duration[0]}-${recovery[0].duration[1]} min`);
+    return workout.join('');
+  }
+  
+  // ===== UFC PI TRAINING PROTOCOLS =====
+  let exerciseNum = 1;
+  
+  // Parse priority order
+  const priorityOrder = parsePriority(priority);
+  
+  // Calculate today's volume contribution (distribute weekly volume across sessions)
+  const sessionsPerWeek = 4; // Typical UFC PI: 4 S&C sessions per week
+  const todayPulling = Math.round(volumeTargets.pulling / sessionsPerWeek * (capacity === 'very_light' ? 0.3 : capacity === 'light' ? 0.5 : capacity === 'moderate' ? 0.75 : 1.0));
+  const todayPushing = Math.round(volumeTargets.pushing / sessionsPerWeek * (capacity === 'very_light' ? 0.3 : capacity === 'light' ? 0.5 : capacity === 'moderate' ? 0.75 : 1.0));
+  const todayLower = Math.round(volumeTargets.lower / sessionsPerWeek * (capacity === 'very_light' ? 0.3 : capacity === 'light' ? 0.5 : capacity === 'moderate' ? 0.75 : 1.0));
+  const todayPower = Math.round(volumeTargets.power / sessionsPerWeek * (capacity === 'very_light' ? 0.3 : capacity === 'light' ? 0.5 : capacity === 'moderate' ? 0.75 : 1.0));
+  const todayConditioning = Math.round(volumeTargets.conditioning / sessionsPerWeek * (capacity === 'very_light' ? 0.3 : capacity === 'light' ? 0.5 : capacity === 'moderate' ? 0.75 : 1.0));
+  
+  // STRENGTH BLOCK (if priority includes strength)
+  if(priorityOrder.includes('strength') && (capacity !== 'very_light' || phase === 'taper')){
+    const strengthBlock = generateEliteStrengthBlock(capacity, phase, todayPulling, todayPushing, todayLower, residualCNS, exerciseNum);
+    workout.push(strengthBlock.html);
+    exerciseNum = strengthBlock.nextNum;
+  }
+  
+  // POWER BLOCK (if priority includes power and not in recovery/very_light)
+  if(priorityOrder.includes('power') && capacity !== 'very_light'){
+    const powerBlock = generateElitePowerBlock(capacity, phase, todayPower, exerciseNum);
+    workout.push(powerBlock.html);
+    exerciseNum = powerBlock.nextNum;
+  }
+  
+  // CONDITIONING BLOCK (80/20 rule)
+  if(priorityOrder.includes('conditioning')){
+    const conditioningBlock = generateEliteConditioningBlock(capacity, phase, todayConditioning, exerciseNum);
+    workout.push(conditioningBlock.html);
+    exerciseNum = conditioningBlock.nextNum;
+  }
+  
+  // CORE (Always included unless recovery)
+  if(capacity !== 'very_light' && capacity !== 'active_recovery'){
+    const coreBlock = generateEliteCoreBlock(capacity, phase, exerciseNum);
+    workout.push(coreBlock.html);
+    exerciseNum = coreBlock.nextNum;
+  }
+  
+  // Add cooldown
+  workout.push('<br><div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px">');
+  workout.push('<strong>COOLDOWN:</strong><br>');
+  workout.push('• 5-10 min easy movement<br>');
+  workout.push('• Foam rolling: Focus on trained areas<br>');
+  workout.push('• Static stretching: 30s holds');
+  workout.push('</div>');
+  
+  return workout.join('');
+}
+
+function generateEliteStrengthBlock(capacity, phase, targetPulling, targetPushing, targetLower, residualCNS, startNum){
+  let html = [];
+  let num = startNum;
+  
+  // ADD WARM-UP PROTOCOL FIRST
+  html.push('<div style="background:#1a1510;padding:10px;border-left:3px solid #ffbb33;margin:10px 0">');
+  html.push('<div style="color:#ffbb33;font-weight:700;margin-bottom:8px">🔥 WARM-UP (10-12 minutes)</div>');
+  html.push('<strong>Phase 1: General (5 min)</strong><br>');
+  html.push('• Assault bike or row: 5 min @ easy pace<br>');
+  html.push('• Purpose: Raise core temperature, increase blood flow<br><br>');
+  html.push('<strong>Phase 2: Dynamic Mobility (4 min)</strong><br>');
+  html.push('• Arm circles: 10 each direction<br>');
+  html.push('• Leg swings: 10/leg (forward/back, side-to-side)<br>');
+  html.push('• Bodyweight squats: 10 reps<br>');
+  html.push('• Inchworms: 5 reps<br>');
+  html.push('• Spiderman lunges: 5/side<br><br>');
+  html.push('<strong>Phase 3: Specific Activation (3 min)</strong><br>');
+  html.push('• Band pull-aparts: 15 reps<br>');
+  html.push('• Glute bridges: 10 reps<br>');
+  html.push('• Scapular push-ups: 10 reps<br>');
+  html.push('• Then: 2-3 warm-up sets of first exercise at 40%, 60%, 80% working weight<br>');
+  html.push('</div>');
+  
+  html.push('<div style="background:#0d1714;padding:10px;border-left:3px solid #00ffb3;margin:10px 0">');
+  html.push('<div style="color:#00ffb3;font-weight:700;margin-bottom:8px">💪 STRENGTH BLOCK (Grappling Priority)</div>');
+  
+  // UFC PI prioritizes pulling for MMA
+  if(capacity === 'light' || capacity === 'very_light'){
+    // Light session - bodyweight/light accessories
+    const pulling = MMA_EXERCISES.pulling_accessory[3]; // Inverted row
+    const core = MMA_EXERCISES.core_accessory[0]; // Dead bug
+    
+    html.push(`<strong>${num}. ${pulling.name}</strong><br>`);
+    html.push(`   • 3 sets × ${pulling.repsPerSet} reps<br>`);
+    html.push(`   • Rest: 90s | RPE: 5-6/10<br><br>`);
+    num++;
+    
+    html.push(`<strong>${num}. ${core.name}</strong><br>`);
+    html.push(`   • 3 sets × ${core.repsPerSet}/side<br>`);
+    html.push(`   • Rest: 60s<br>`);
+    num++;
+    
+  } else {
+    // Moderate to Full session
+    
+    // 1. MAIN PULLING EXERCISE (Primary focus for MMA)
+    const mainPulling = (phase === 'taper' || phase === 'peak') ?
+      MMA_EXERCISES.pulling_primary[0] : // Weighted pull-up
+      MMA_EXERCISES.pulling_primary[Math.floor(Math.random() * MMA_EXERCISES.pulling_primary.length)];
+    
+    const pullingSets = (phase === 'peak') ? 3 : (phase === 'taper') ? 3 : (phase === 'maintenance') ? 4 : 5;
+    const pullingReps = (phase === 'peak') ? '3' : (phase === 'taper') ? '4-5' : (phase === 'maintenance') ? '5-6' : '4-6';
+    const pullingRPE = (phase === 'peak') ? '7-8' : (phase === 'taper') ? '7-8' : '8-9';
+    
+    html.push(`<strong>${num}. ${mainPulling.name} (MAIN LIFT - Grappling Priority)</strong><br>`);
+    html.push(`   • ${pullingSets} sets × ${pullingReps} reps @ RPE ${pullingRPE}<br>`);
+    html.push(`   • Rest: 3 min<br>`);
+    html.push(`   • Notes: ${mainPulling.notes || 'Control eccentric'}<br><br>`);
+    num++;
+    
+    // 2. SECONDARY PUSHING (Striking Power)
+    if(capacity === 'full' || capacity === 'moderate'){
+      const pushing = (phase === 'taper' || phase === 'peak') ?
+        MMA_EXERCISES.pushing_accessory[0] : // Single-arm landmine
+        MMA_EXERCISES.pushing_primary[1]; // Landmine press
+      
+      const pushSets = (phase === 'peak') ? 2 : (phase === 'taper') ? 3 : 4;
+      const pushReps = pushing.repsPerSet;
+      
+      html.push(`<strong>${num}. ${pushing.name}</strong><br>`);
+      html.push(`   • ${pushSets} sets × ${pushReps} reps/side<br>`);
+      html.push(`   • Rest: 2 min | RPE: 7-8/10<br>`);
+      html.push(`   • Notes: ${pushing.notes || 'Anti-rotation + power'}<br><br>`);
+      num++;
+    }
+    
+    // 3. LOWER BODY (if not leg-fatigued from skill training)
+    if((capacity === 'full' || capacity === 'moderate') && residualCNS < 50 && !['peak'].includes(phase)){
+      const lower = (phase === 'taper') ?
+        MMA_EXERCISES.lower_accessory[0] : // Bulgarian split squat
+        MMA_EXERCISES.lower_accessory[1]; // RDL
+      
+      const lowerSets = (phase === 'taper') ? 2 : 3;
+      
+      html.push(`<strong>${num}. ${lower.name}</strong><br>`);
+      html.push(`   • ${lowerSets} sets × ${lower.repsPerSet} reps${lower.name.includes('Split') || lower.name.includes('Lunge') ? '/leg' : ''}<br>`);
+      html.push(`   • Rest: 2 min | RPE: 7-8/10<br>`);
+      html.push(`   • Notes: ${lower.notes || 'Explosive intent'}<br><br>`);
+      num++;
+    }
+    
+    // 4. ACCESSORY PULLING (accumulate volume)
+    if(capacity === 'full' && !['peak', 'taper'].includes(phase)){
+      const accPulling = MMA_EXERCISES.pulling_accessory[1]; // Chest-supported row
+      
+      html.push(`<strong>${num}. ${accPulling.name}</strong><br>`);
+      html.push(`   • 3 sets × ${accPulling.repsPerSet} reps<br>`);
+      html.push(`   • Rest: 90s | RPE: 7-8/10<br><br>`);
+      num++;
+    }
+  }
+  
+  html.push('</div>');
+  return {html: html.join(''), nextNum: num};
+}
+
+function generateElitePowerBlock(capacity, phase, targetPower, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#1a0d14;padding:10px;border-left:3px solid #ff7a45;margin:10px 0">');
+  html.push('<div style="color:#ff7a45;font-weight:700;margin-bottom:8px">⚡ POWER BLOCK (Explosive Development)</div>');
+  
+  if(phase === 'peak'){
+    // Minimal power - neural priming only
+    const ex = MMA_EXERCISES.power_primary[1]; // Broad jump
+    html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+    html.push(`   • 3 sets × 2 reps<br>`);
+    html.push(`   • Rest: 3 min<br>`);
+    html.push(`   • Focus: QUALITY, max distance, full recovery<br><br>`);
+    num++;
+    
+  } else if(phase === 'taper'){
+    // Reduced volume, maintain quality
+    const ex1 = MMA_EXERCISES.power_primary[0]; // Box jump
+    const ex2 = MMA_EXERCISES.power_primary[3]; // Med ball rotational throw
+    
+    html.push(`<strong>${num}. ${ex1.name}</strong><br>`);
+    html.push(`   • 3 sets × ${ex1.repsPerSet} reps<br>`);
+    html.push(`   • Rest: 2-3 min<br>`);
+    html.push(`   • Notes: ${ex1.notes}<br><br>`);
+    num++;
+    
+    html.push(`<strong>${num}. ${ex2.name}</strong><br>`);
+    html.push(`   • 3 sets × ${ex2.repsPerSet} reps/side<br>`);
+    html.push(`   • Rest: 2 min<br>`);
+    html.push(`   • Notes: ${ex2.notes}<br><br>`);
+    num++;
+    
+  } else {
+    // Full power development
+    const exercises = (capacity === 'full') ? 
+      [MMA_EXERCISES.power_primary[0], MMA_EXERCISES.power_primary[2], MMA_EXERCISES.power_primary[3]] :
+      [MMA_EXERCISES.power_accessory[1]];
+    
+    exercises.forEach(ex => {
+      const sets = (phase === 'maintenance') ? 3 : (capacity === 'moderate') ? 3 : 4;
+      html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+      html.push(`   • ${sets} sets × ${ex.repsPerSet} reps${ex.name.includes('Rotational') ? '/side' : ''}<br>`);
+      html.push(`   • Rest: 2-3 min<br>`);
+      html.push(`   • Focus: Maximum explosiveness<br>`);
+      if(ex.notes) html.push(`   • Notes: ${ex.notes}<br>`);
+      html.push('<br>');
+      num++;
+    });
+  }
+  
+  html.push('</div>');
+  return {html: html.join(''), nextNum: num};
+}
+
+function generateEliteConditioningBlock(capacity, phase, targetMinutes, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#0d1419;padding:10px;border-left:3px solid #00ccff;margin:10px 0">');
+  html.push('<div style="color:#00ccff;font-weight:700;margin-bottom:8px">🚴 CONDITIONING BLOCK (80/20 Rule: 80% Z2, 20% High Intensity)</div>');
+  
+  // 80% Z2, 20% high intensity
+  const useZ2 = (phase === 'base' || phase === 'maintenance' || capacity === 'light');
+  
+  if(phase === 'peak'){
+    // Minimal conditioning
+    html.push(`<strong>${num}. Light Movement</strong><br>`);
+    html.push(`   • 15 min easy Z2 bike or walk<br>`);
+    html.push(`   • RPE: 4-5/10<br>`);
+    html.push(`   • Purpose: Stay loose, don't fatigue<br><br>`);
+    
+  } else if(phase === 'taper'){
+    const ex = MMA_EXERCISES.conditioning_z2[0];
+    html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+    html.push(`   • ${ex.protocol}<br>`);
+    html.push(`   • Duration: 20 min<br>`);
+    html.push(`   • Zone: ${ex.zone} (65-75% max HR)<br><br>`);
+    
+  } else if(useZ2 || capacity === 'light'){
+    // Z2 work (80% of UFC PI conditioning)
+    const ex = MMA_EXERCISES.conditioning_z2[0];
+    const duration = Math.min(targetMinutes, ex.duration[Math.floor(ex.duration.length/2)]);
+    html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+    html.push(`   • ${ex.protocol}<br>`);
+    html.push(`   • Duration: ${duration} min<br>`);
+    html.push(`   • Zone: ${ex.zone} (conversational pace)<br>`);
+    html.push(`   • Purpose: Aerobic base, recovery between hard sessions<br><br>`);
+    
+  } else {
+    // Intervals (20% of UFC PI conditioning)
+    const ex = (phase === 'strength' && capacity === 'full') ?
+      MMA_EXERCISES.conditioning_intervals[0] : // 10×30/30
+      MMA_EXERCISES.conditioning_intervals[2]; // 6×2min
+    
+    html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+    html.push(`   • ${ex.protocol}<br>`);
+    html.push(`   • Duration: ${ex.duration} min<br>`);
+    html.push(`   • Intensity: ${ex.intensity}<br>`);
+    html.push(`   • Purpose: High-end capacity, lactate threshold<br><br>`);
+  }
+  
+  num++;
+  html.push('</div>');
+  return {html: html.join(''), nextNum: num};
+}
+
+function generateEliteCoreBlock(capacity, phase, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#14100d;padding:10px;border-left:3px solid #ffbb33;margin:10px 0">');
+  html.push('<div style="color:#ffbb33;font-weight:700;margin-bottom:8px">🔒 CORE (Anti-Rotation Critical for MMA)</div>');
+  
+  if(phase === 'peak' || capacity === 'light'){
+    const ex = MMA_EXERCISES.core_accessory[0];
+    html.push(`<strong>${num}. ${ex.name}</strong><br>`);
+    html.push(`   • 2 sets × ${ex.repsPerSet}/side<br>`);
+    html.push(`   • Rest: 60s<br>`);
+    html.push(`   • Notes: ${ex.notes}<br>`);
+  } else {
+    const ex1 = MMA_EXERCISES.core_primary[0]; // Pallof press
+    const ex2 = MMA_EXERCISES.core_accessory[0]; // Dead bug
+    
+    html.push(`<strong>${num}. ${ex1.name}</strong><br>`);
+    html.push(`   • 3 sets × ${ex1.repsPerSet}/side<br>`);
+    html.push(`   • Rest: 90s<br>`);
+    html.push(`   • Notes: ${ex1.notes}<br><br>`);
+    num++;
+    
+    html.push(`<strong>${num}. ${ex2.name}</strong><br>`);
+    html.push(`   • 3 sets × ${ex2.repsPerSet}/side<br>`);
+    html.push(`   • Rest: 60s<br>`);
+    html.push(`   • Notes: ${ex2.notes}<br>`);
+  }
+  
+  num++;
+  html.push('</div>');
+  return {html: html.join(''), nextNum: num};
+}
+
+function parsePriority(priorityString){
+  let workout = [];
+  
+  // Determine training capacity based on cumulative load
+  let capacity = 'full';
+  if(cumulativeCNS >= 120 || maxIntensity === 'Max' && cumulativeCNS >= 90){
+    capacity = 'recovery';
+  } else if(cumulativeCNS >= 90){
+    capacity = 'active_recovery';
+  } else if(cumulativeCNS >= 70){
+    capacity = 'very_light';
+  } else if(cumulativeCNS >= 50){
+    capacity = 'light';
+  } else if(cumulativeCNS >= 30){
+    capacity = 'moderate';
+  }
+  
+  // Apply deload override
+  if(isDeload && capacity === 'full'){
+    capacity = 'light';
+  }
+  
+  // Parse priority order
+  const priorityOrder = parsePriority(priority);
+  
+  // ===== RECOVERY PROTOCOLS =====
+  if(capacity === 'recovery'){
+    workout.push('<div style="color:#ff6b6b;font-weight:700;margin-bottom:8px">🛑 MANDATORY RECOVERY DAY</div>');
+    workout.push('<strong>Option A: Complete Rest</strong>');
+    workout.push('• No training today');
+    workout.push('• Focus: Sleep 8-9h, hydration, nutrition<br>');
+    workout.push('<strong>Option B: Light Mobility (if you must move)</strong>');
+    const recovery = MMA_EXERCISES.recovery;
+    workout.push(`• ${recovery[1].name}: ${recovery[1].duration}`);
+    workout.push(`• ${recovery[3].name}: ${recovery[3].duration}`);
+    return workout.join('<br>');
+  }
+  
+  if(capacity === 'active_recovery'){
+    workout.push('<div style="color:#ffbb33;font-weight:700;margin-bottom:8px">🛑 ACTIVE RECOVERY ONLY</div>');
+    const recovery = MMA_EXERCISES.recovery;
+    const conditioning = MMA_EXERCISES.conditioning_light[0];
+    workout.push(`<strong>1. ${conditioning.name}</strong>`);
+    workout.push(`   • ${conditioning.protocol}`);
+    workout.push(`   • Duration: ${conditioning.duration}`);
+    workout.push(`   • RPE: 3-4/10 (conversational pace)<br>`);
+    workout.push(`<strong>2. ${recovery[1].name}</strong>`);
+    workout.push(`   • Duration: ${recovery[1].duration}<br>`);
+    workout.push(`<strong>3. ${recovery[0].name}</strong>`);
+    workout.push(`   • Duration: ${recovery[0].duration}`);
+    return workout.join('<br>');
+  }
+  
+  // ===== TRAINING PROTOCOLS =====
+  let exerciseNum = 1;
+  
+  // Determine which domains to train based on priority and capacity
+  let domainsToTrain = [];
+  
+  if(capacity === 'very_light'){
+    // Only 1 domain, very light
+    domainsToTrain = [priorityOrder[0]];
+  } else if(capacity === 'light'){
+    // 1-2 domains, light intensity
+    domainsToTrain = priorityOrder.slice(0, phase === 'taper' ? 1 : 2);
+  } else if(capacity === 'moderate'){
+    // 2 domains, moderate intensity
+    domainsToTrain = priorityOrder.slice(0, 2);
+  } else if(capacity === 'full'){
+    // 2-3 domains based on phase
+    if(phase === 'peak'){
+      domainsToTrain = [priorityOrder[0]]; // Only primary domain
+    } else if(phase === 'taper' || phase === 'maintenance'){
+      domainsToTrain = priorityOrder.slice(0, 2);
+    } else {
+      domainsToTrain = priorityOrder.slice(0, 3);
+    }
+  }
+  
+  // Generate exercises for each domain
+  domainsToTrain.forEach(domain => {
+    if(domain === 'strength'){
+      const strengthExercises = generateStrengthBlock(capacity, phase, volMult, intMult, residualCNS, exerciseNum);
+      workout.push(strengthExercises.html);
+      exerciseNum = strengthExercises.nextNum;
+    } else if(domain === 'conditioning'){
+      const conditioningExercises = generateConditioningBlock(capacity, phase, exerciseNum);
+      workout.push(conditioningExercises.html);
+      exerciseNum = conditioningExercises.nextNum;
+    } else if(domain === 'power'){
+      const powerExercises = generatePowerBlock(capacity, phase, volMult, exerciseNum);
+      workout.push(powerExercises.html);
+      exerciseNum = powerExercises.nextNum;
+    }
+  });
+  
+  // Add cooldown
+  workout.push('<br><div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px">');
+  workout.push('<strong>COOLDOWN:</strong>');
+  workout.push('• 5-10 min easy movement');
+  workout.push('• Foam rolling: Focus on trained areas');
+  workout.push('• Static stretching: 30s holds');
+  workout.push('</div>');
+  
+  return workout.join('<br>');
+}
+
+function parsePriority(priorityString){
+  const str = priorityString.toLowerCase();
+  const domains = [];
+  
+  if(str.includes('strength')) domains.push('strength');
+  if(str.includes('conditioning')) domains.push('conditioning');
+  if(str.includes('power')) domains.push('power');
+  if(str.includes('technical')) domains.push('technical');
+  
+  // If no domains found or balanced, use default order
+  if(domains.length === 0){
+    return ['strength', 'conditioning', 'power', 'technical'];
+  }
+  
+  return domains;
+}
+
+function generateStrengthBlock(capacity, phase, volMult, intMult, residualCNS, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#0d1714;padding:8px;border-left:3px solid #00ffb3;margin:8px 0">');
+  html.push('<div style="color:#00ffb3;font-weight:700;margin-bottom:6px">💪 STRENGTH BLOCK</div>');
+  
+  if(capacity === 'very_light'){
+    // Bodyweight only
+    const ex1 = MMA_EXERCISES.pulling_light[0];
+    const ex2 = MMA_EXERCISES.core_moderate[1];
+    
+    html.push(`<strong>${num}. ${ex1.name}</strong>`);
+    html.push(`   • ${ex1.sets} sets × ${ex1.reps}`);
+    html.push(`   • Rest: ${ex1.rest}`);
+    html.push(`   • RPE: 5-6/10<br>`);
+    num++;
+    
+    html.push(`<strong>${num}. ${ex2.name}</strong>`);
+    html.push(`   • ${ex2.sets} sets × ${ex2.reps}`);
+    html.push(`   • Rest: ${ex2.rest}`);
+    num++;
+    
+  } else if(capacity === 'light'){
+    // Light-moderate exercises, reduced volume
+    const pulling = residualCNS > 30 ? MMA_EXERCISES.pulling_light[0] : MMA_EXERCISES.pulling_moderate[1];
+    const pushing = MMA_EXERCISES.pushing_light[0];
+    const core = MMA_EXERCISES.core_moderate[0];
+    
+    [pulling, pushing, core].forEach(ex => {
+      html.push(`<strong>${num}. ${ex.name}</strong>`);
+      html.push(`   • ${ex.sets} sets × ${ex.reps}`);
+      html.push(`   • Rest: ${ex.rest}`);
+      html.push(`   • RPE: 6-7/10<br>`);
+      num++;
+    });
+    
+  } else if(capacity === 'moderate' || capacity === 'full'){
+    // Full strength session
+    const intensity = capacity === 'full' && phase === 'strength' ? 'heavy' : 'moderate';
+    
+    // Main lift (pulling emphasis for MMA)
+    const mainLift = intensity === 'heavy' ? 
+      MMA_EXERCISES.pulling_heavy[Math.floor(Math.random() * MMA_EXERCISES.pulling_heavy.length)] :
+      MMA_EXERCISES.pulling_moderate[0];
+    
+    html.push(`<strong>${num}. ${mainLift.name} (MAIN LIFT)</strong>`);
+    
+    if(phase === 'peak'){
+      html.push(`   • 3 sets × 3 reps @ RPE 7-8 (sharp, not maximal)`);
+    } else if(phase === 'taper'){
+      html.push(`   • 3 sets × 4-5 reps @ RPE 7-8`);
+    } else {
+      const adjSets = Math.max(2, Math.round(parseInt(mainLift.sets) * volMult));
+      html.push(`   • ${adjSets} sets × ${mainLift.reps} @ RPE ${intensity === 'heavy' ? '8-9' : '7-8'}`);
+    }
+    html.push(`   • Rest: ${mainLift.rest}<br>`);
+    num++;
+    
+    // Accessory work
+    if(capacity === 'full' && !['peak','taper'].includes(phase)){
+      const accessories = [
+        MMA_EXERCISES.pushing_moderate[2], // Landmine press
+        MMA_EXERCISES.lower_moderate[0], // Bulgarian split squat
+        MMA_EXERCISES.core_heavy[0] // Pallof press
+      ];
+      
+      accessories.forEach(ex => {
+        html.push(`<strong>${num}. ${ex.name}</strong>`);
+        const adjSets = Math.max(2, Math.round(parseInt(ex.sets) * volMult));
+        html.push(`   • ${adjSets} sets × ${ex.reps}`);
+        html.push(`   • Rest: ${ex.rest}`);
+        html.push(`   • RPE: 7-8/10<br>`);
+        num++;
+      });
+    } else {
+      // Reduced accessories
+      const ex = MMA_EXERCISES.core_moderate[0];
+      html.push(`<strong>${num}. ${ex.name}</strong>`);
+      html.push(`   • ${ex.sets} sets × ${ex.reps}`);
+      html.push(`   • Rest: ${ex.rest}<br>`);
+      num++;
+    }
+  }
+  
+  html.push('</div>');
+  return {html: html.join('<br>'), nextNum: num};
+}
+
+function generatePowerBlock(capacity, phase, volMult, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#1a0d14;padding:8px;border-left:3px solid #ff7a45;margin:8px 0">');
+  html.push('<div style="color:#ff7a45;font-weight:700;margin-bottom:6px">⚡ POWER BLOCK</div>');
+  
+  if(['peak','taper'].includes(phase)){
+    // Reduced volume, sharp movements
+    const ex1 = MMA_EXERCISES.power_max[2]; // Broad jump
+    html.push(`<strong>${num}. ${ex1.name}</strong>`);
+    html.push(`   • 3-4 sets × 2-3 reps`);
+    html.push(`   • Rest: ${ex1.rest}`);
+    html.push(`   • Focus: QUALITY over quantity<br>`);
+    num++;
+    
+  } else if(capacity === 'moderate' || capacity === 'full'){
+    const exercises = capacity === 'full' ? 
+      [MMA_EXERCISES.power_max[0], MMA_EXERCISES.power_max[3]] :
+      [MMA_EXERCISES.power_moderate[1]];
+    
+    exercises.forEach(ex => {
+      html.push(`<strong>${num}. ${ex.name}</strong>`);
+      const adjSets = Math.max(3, Math.round(parseInt(ex.sets) * volMult));
+      html.push(`   • ${adjSets} sets × ${ex.reps}`);
+      html.push(`   • Rest: ${ex.rest}`);
+      html.push(`   • Focus: Maximum explosiveness<br>`);
+      num++;
+    });
+  } else {
+    // Light power work
+    const ex = MMA_EXERCISES.power_moderate[0];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • 3 sets × 6-8 reps`);
+    html.push(`   • Rest: 90s`);
+    html.push(`   • RPE: 6-7/10<br>`);
+    num++;
+  }
+  
+  html.push('</div>');
+  return {html: html.join('<br>'), nextNum: num};
+}
+
+function generateConditioningBlock(capacity, phase, startNum){
+  let html = [];
+  let num = startNum;
+  
+  html.push('<div style="background:#0d1419;padding:8px;border-left:3px solid #00ccff;margin:8px 0">');
+  html.push('<div style="color:#00ccff;font-weight:700;margin-bottom:6px">🚴 CONDITIONING BLOCK</div>');
+  
+  if(['peak'].includes(phase)){
+    // Minimal conditioning, stay sharp
+    const ex = MMA_EXERCISES.conditioning_light[1];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • Protocol: Light & easy`);
+    html.push(`   • Duration: 15 min`);
+    html.push(`   • RPE: 4-5/10<br>`);
+    
+  } else if(phase === 'taper'){
+    const ex = MMA_EXERCISES.conditioning_moderate[0];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • ${ex.protocol}`);
+    html.push(`   • Duration: 20 min`);
+    html.push(`   • RPE: 6-7/10<br>`);
+    
+  } else if(capacity === 'light' || capacity === 'very_light'){
+    const ex = MMA_EXERCISES.conditioning_light[0];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • ${ex.protocol}`);
+    html.push(`   • Duration: ${ex.duration}`);
+    html.push(`   • Stay in Z1-Z2<br>`);
+    
+  } else if(capacity === 'moderate'){
+    const ex = MMA_EXERCISES.conditioning_moderate[0];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • ${ex.protocol}`);
+    html.push(`   • Duration: 25 min`);
+    html.push(`   • Target HR: Z2 (65-75% max)<br>`);
+    
+  } else if(capacity === 'full'){
+    const ex = phase === 'strength' ? 
+      MMA_EXERCISES.conditioning_high[0] :
+      MMA_EXERCISES.conditioning_moderate[1];
+    html.push(`<strong>${num}. ${ex.name}</strong>`);
+    html.push(`   • ${ex.protocol}`);
+    html.push(`   • Duration: ${ex.duration}`);
+    html.push(`   • Push hard but controlled<br>`);
+  }
+  
+  num++;
+  html.push('</div>');
+  return {html: html.join('<br>'), nextNum: num};
+}
+
+function clearDay(dayId){
+  const dayContainer = document.getElementById(dayId);
+  dayContainer.innerHTML = '<div class="muted sm">Click "+ Session" to add skill training sessions (1-3 per day)</div>';
+  const recDiv = document.getElementById(dayId + '-recommendations');
+  if(recDiv) recDiv.style.display = 'none';
+  
+  // Trigger cascade recalculation for all following days
+  cascadeRecalculation(dayId);
+}
+
+function toggleManualOverride(dayId){
+  const manualDiv = document.getElementById(dayId + '-manual');
+  if(manualDiv){
+    manualDiv.style.display = (manualDiv.style.display === 'none') ? 'block' : 'none';
+  }
+}
+
+function saveManualWorkout(dayId){
+  const textArea = document.getElementById(dayId + '-manual-text');
+  const recText = document.getElementById(dayId + '-rec-text');
+  
+  if(textArea && recText && textArea.value.trim()){
+    // Save manual workout
+    const manualWorkout = textArea.value.trim();
+    
+    // Display it with override indicator
+    recText.innerHTML = `
+      <div style="padding:8px;background:#1a0d14;border:1px solid var(--accent);border-radius:6px;margin-bottom:8px">
+        <div style="color:var(--accent);font-weight:700;margin-bottom:4px">✏️ MANUAL OVERRIDE ACTIVE</div>
+        <div class="muted" style="font-size:11px">This workout was manually entered and will not auto-update</div>
+      </div>
+      <div style="white-space:pre-wrap;font-family:monospace;font-size:12px">${manualWorkout}</div>`;
+    
+    // Hide manual editor
+    const manualDiv = document.getElementById(dayId + '-manual');
+    if(manualDiv) manualDiv.style.display = 'none';
+    
+    // Store override flag
+    const dayContainer = document.getElementById(dayId);
+    if(dayContainer) dayContainer.setAttribute('data-manual-override', 'true');
+    
+    alert('Manual workout saved! Click "Revert to Auto" to return to auto-generation.');
+  } else {
+    alert('Please enter a workout first');
+  }
+}
+
+function clearManualWorkout(dayId){
+  const textArea = document.getElementById(dayId + '-manual-text');
+  const dayContainer = document.getElementById(dayId);
+  
+  if(textArea) textArea.value = '';
+  if(dayContainer) dayContainer.removeAttribute('data-manual-override');
+  
+  // Hide manual editor
+  const manualDiv = document.getElementById(dayId + '-manual');
+  if(manualDiv) manualDiv.style.display = 'none';
+  
+  // Regenerate auto workout
+  computeDayRecommendation(dayId);
+  
+  alert('Reverted to auto-generated workout');
+}
+
+function cascadeRecalculation(startDayId){
+  // Get day index
+  const dayIndex = parseInt(startDayId.replace('day', ''));
+  
+  // Recalculate all days from the changed day onwards
+  for(let i = dayIndex; i <= 6; i++){
+    const dayId = 'day' + i;
+    const dayContainer = document.getElementById(dayId);
+    
+    // Skip if manual override is active
+    if(dayContainer && dayContainer.getAttribute('data-manual-override') === 'true'){
+      continue;
+    }
+    
+    // Recalculate this day
+    const sessions = dayContainer?.querySelectorAll('.session-card');
+    if(sessions && sessions.length > 0){
+      computeDayRecommendation(dayId);
+    }
+  }
+}
+
+function clearWeekSchedule(){
+  const dayContainer = document.getElementById(dayId);
+  dayContainer.innerHTML = '<div class="muted sm">Click "+ Session" to add skill training sessions (1-3 per day)</div>';
+  const recDiv = document.getElementById(dayId + '-recommendations');
+  if(recDiv) recDiv.style.display = 'none';
+}
+
+function clearWeekSchedule(){
+  if(confirm('Clear entire week schedule?')){
+    generateWeekSchedule();
+  }
+}
+
+function printWeekSchedule(){
+  window.print();
+}
+
 /* ========= Fight Camp storage ========= */
 const campModal=document.getElementById('campModal');
-document.getElementById('fightCampBtn').onclick=()=>{ campModal.classList.add('show'); };
+document.getElementById('fightCampBtn').onclick=()=>{ 
+  const saved = LS.get('elite_camp', null);
+  if(saved){
+    document.getElementById('fcLen').value = saved.len || 8;
+    document.getElementById('fcWeek').value = saved.wk || 1;
+    document.getElementById('fcOrder').value = saved.order || 'Balanced (All domains equally)';
+    document.getElementById('fcLevel').value = saved.level || 5;
+    document.getElementById('fcLevelVal').textContent = saved.level || 5;
+    if(saved.t1){
+      document.getElementById('t1Watts').value = saved.t1.watts || '';
+      document.getElementById('t1Peak').value = saved.t1.peak || '';
+      document.getElementById('t1HR60').value = saved.t1.hr60 || '';
+    }
+    if(saved.t2){
+      document.getElementById('t2MB').value = saved.t2.mb || '';
+      document.getElementById('t2R').value = saved.t2.R || '';
+      document.getElementById('t2L').value = saved.t2.L || '';
+    }
+    if(saved.t3){
+      document.getElementById('t3Dist').value = saved.t3.dist || '';
+      document.getElementById('t3Unit').value = saved.t3.unit || 'Feet';
+    }
+    if(saved.t4){
+      document.getElementById('t4Type').value = saved.t4.type || 'Weighted pull-up (3–5RM)';
+      document.getElementById('t4Load').value = saved.t4.load || '';
+    }
+  }
+  campModal.classList.add('show'); 
+};
 function closeCamp(){ campModal.classList.remove('show'); }
 function saveCamp(){
   const data={
     len:fmt(document.getElementById('fcLen').value), wk:fmt(document.getElementById('fcWeek').value),
-    order:document.getElementById('fcOrder').value, level:document.getElementById('fcLevel').value,
+    order:document.getElementById('fcOrder').value, level:fmt(document.getElementById('fcLevel').value),
     t1:{watts:fmt(document.getElementById('t1Watts').value), peak:fmt(document.getElementById('t1Peak').value), hr60:fmt(document.getElementById('t1HR60').value)},
     t2:{mb:fmt(document.getElementById('t2MB').value), R:fmt(document.getElementById('t2R').value), L:fmt(document.getElementById('t2L').value)},
     t3:{dist:fmt(document.getElementById('t3Dist').value), unit:document.getElementById('t3Unit').value},
     t4:{type:document.getElementById('t4Type').value, load:fmt(document.getElementById('t4Load').value)}
   };
-  LS.set('elite_camp',data); closeCamp();
+  LS.set('elite_camp',data); 
+  alert('Fight Camp Assessment Saved ✓');
+  closeCamp();
 }
 
 /* ========= Library ========= */
@@ -1150,6 +2773,310 @@ document.getElementById('hardResetBtn').onclick=()=>{
     alert('Reset complete.');
   }
 };
+
+/* ========= Interactive Training Logger ========= */
+let currentTrainingDay = null;
+let currentWorkoutData = null;
+
+function startTraining(dayId){
+  currentTrainingDay = dayId;
+  
+  // Get the workout text
+  const recText = document.getElementById(dayId + '-rec-text');
+  if(!recText) return;
+  
+  const workoutHTML = recText.innerHTML;
+  
+  // Parse workout into interactive logger
+  const loggerContent = document.getElementById('trainingLoggerContent');
+  loggerContent.innerHTML = createInteractiveWorkout(workoutHTML, dayId);
+  
+  // Show modal
+  document.getElementById('trainingLoggerModal').classList.add('show');
+}
+
+function createInteractiveWorkout(workoutHTML, dayId){
+  let html = [];
+  
+  // Extract exercises from workout HTML
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(workoutHTML, 'text/html');
+  
+  // Find all exercise blocks
+  const blocks = doc.querySelectorAll('div[style*="border-left"]');
+  
+  blocks.forEach((block, blockIdx) => {
+    const blockTitle = block.querySelector('div[style*="font-weight:700"]')?.textContent || 'Exercise Block';
+    const exercises = block.innerHTML.split('<strong>').filter(e => e.includes('</strong>'));
+    
+    html.push(`<div class="sec" style="margin-bottom:12px">`);
+    html.push(`<div class="hd">${blockTitle}</div>`);
+    html.push(`<div class="bd">`);
+    
+    exercises.forEach((ex, exIdx) => {
+      if(!ex.trim()) return;
+      
+      // Extract exercise name
+      const nameMatch = ex.match(/^(\d+\.\s*)?([^<]+)</);
+      const name = nameMatch ? nameMatch[2].trim() : 'Exercise';
+      
+      // Extract sets/reps info
+      const setsMatch = ex.match(/(\d+)\s*sets?\s*×\s*(\d+[-\d]*)\s*reps?/i);
+      const sets = setsMatch ? parseInt(setsMatch[1]) : 3;
+      const reps = setsMatch ? setsMatch[2] : '8';
+      
+      // Extract RPE if present
+      const rpeMatch = ex.match(/RPE[:\s]+(\d+[-\d]*)/i);
+      const targetRPE = rpeMatch ? rpeMatch[1] : '7-8';
+      
+      html.push(`<div class="sec" style="margin:10px 0;background:#0d0f1a">`);
+      html.push(`<div class="hd" style="background:#0f1218;font-size:14px">${name}</div>`);
+      html.push(`<div class="bd">`);
+      html.push(`<div class="muted sm" style="margin-bottom:8px">Prescribed: ${sets} sets × ${reps} reps @ RPE ${targetRPE}</div>`);
+      
+      // Create interactive set logger
+      for(let s = 1; s <= sets; s++){
+        html.push(`<div class="row" style="gap:8px;margin-bottom:6px;align-items:center;flex-wrap:nowrap">`);
+        html.push(`<input type="checkbox" class="set-check" data-block="${blockIdx}" data-ex="${exIdx}" data-set="${s}" style="width:20px;height:20px">`);
+        html.push(`<span style="min-width:50px;font-weight:700">Set ${s}:</span>`);
+        html.push(`<input type="number" placeholder="Weight" class="set-weight" style="width:80px;padding:6px" step="0.5">`);
+        html.push(`<span>lb ×</span>`);
+        html.push(`<input type="number" placeholder="Reps" class="set-reps" style="width:60px;padding:6px" value="${reps.split('-')[0]}">`);
+        html.push(`<span style="margin-left:8px">RPE:</span>`);
+        html.push(`<input type="number" placeholder="RPE" class="set-rpe" style="width:50px;padding:6px" min="1" max="10" step="0.5">`);
+        html.push(`</div>`);
+      }
+      
+      html.push(`<div style="margin-top:8px">`);
+      html.push(`<label style="font-size:11px">Notes (optional)</label>`);
+      html.push(`<input type="text" class="ex-notes" placeholder="How did it feel?" style="width:100%;padding:6px;font-size:12px">`);
+      html.push(`</div>`);
+      html.push(`</div></div>`);
+    });
+    
+    html.push(`</div></div>`);
+  });
+  
+  return html.join('');
+}
+
+function finishTraining(){
+  if(!currentTrainingDay) return;
+  
+  // Collect all completed sets
+  const logger = document.getElementById('trainingLoggerContent');
+  const allSets = logger.querySelectorAll('.set-check');
+  
+  let completedData = {
+    day: currentTrainingDay,
+    timestamp: new Date().toISOString(),
+    exercises: []
+  };
+  
+  // Group sets by exercise
+  let currentEx = null;
+  allSets.forEach(checkbox => {
+    const block = checkbox.closest('.sec');
+    const exName = block.querySelector('.hd')?.textContent || 'Unknown';
+    const weight = checkbox.closest('.row').querySelector('.set-weight').value;
+    const reps = checkbox.closest('.row').querySelector('.set-reps').value;
+    const rpe = checkbox.closest('.row').querySelector('.set-rpe').value;
+    const checked = checkbox.checked;
+    
+    if(!currentEx || currentEx.name !== exName){
+      if(currentEx) completedData.exercises.push(currentEx);
+      currentEx = {name: exName, sets: []};
+    }
+    
+    if(checked && weight && reps){
+      currentEx.sets.push({
+        weight: parseFloat(weight),
+        reps: parseInt(reps),
+        rpe: parseFloat(rpe) || null
+      });
+    }
+  });
+  
+  if(currentEx) completedData.exercises.push(currentEx);
+  
+  // Save to localStorage
+  const dayKey = currentTrainingDay;
+  const dayData = store[dayKey] || {modalities: {}};
+  dayData.completedWorkout = completedData;
+  store[dayKey] = dayData;
+  LS.set('elite_days', store);
+  
+  // Calculate adaptive adjustments
+  calculateAdaptiveAdjustments(completedData);
+  
+  // Close modal
+  closeTrainingLogger();
+  alert(`Training saved! Completed ${completedData.exercises.length} exercises.`);
+}
+
+function calculateAdaptiveAdjustments(completedData){
+  // Analyze performance vs prescribed
+  completedData.exercises.forEach(ex => {
+    if(ex.sets.length === 0) return;
+    
+    // Calculate average RPE
+    const rpes = ex.sets.filter(s => s.rpe).map(s => s.rpe);
+    const avgRPE = rpes.length ? rpes.reduce((a,b) => a+b, 0) / rpes.length : 0;
+    
+    // Calculate total volume
+    const totalVolume = ex.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+    
+    // Store progression data
+    const progressionKey = 'elite_progression';
+    let progression = LS.get(progressionKey, {});
+    if(!progression[ex.name]) progression[ex.name] = {history: []};
+    
+    progression[ex.name].history.push({
+      date: new Date().toISOString().split('T')[0],
+      sets: ex.sets.length,
+      avgWeight: ex.sets.reduce((sum, s) => sum + s.weight, 0) / ex.sets.length,
+      totalVolume: totalVolume,
+      avgRPE: avgRPE
+    });
+    
+    // Keep only last 10 sessions
+    if(progression[ex.name].history.length > 10){
+      progression[ex.name].history.shift();
+    }
+    
+    // Determine adjustment
+    if(avgRPE >= 9.5){
+      progression[ex.name].adjustment = 'decrease'; // Too hard
+    } else if(avgRPE <= 6){
+      progression[ex.name].adjustment = 'increase'; // Too easy
+    } else {
+      progression[ex.name].adjustment = 'maintain'; // Just right
+    }
+    
+    LS.set(progressionKey, progression);
+  });
+}
+
+function closeTrainingLogger(){
+  document.getElementById('trainingLoggerModal').classList.remove('show');
+  currentTrainingDay = null;
+  currentWorkoutData = null;
+}
+
+/* ========= Calendar Day View with Schedule ========= */
+function openDay(date){
+  curKey=toKey(date);
+  document.getElementById('dayTitle').textContent=date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  
+  // Show schedule for this day if it exists
+  displayDaySchedule(curKey);
+  
+  // Check if this day has a saved workout and add START TRAINING button
+  addStartTrainingButtonToDay(curKey);
+  
+  ['mChest','mBack','mLegs','mTrack','mBike','mBJJ','mWalk'].forEach(id=>document.getElementById(id).checked=false);
+  ['secChest','secBack','secLegs','secTrack','secBike','secBJJ','secWalk'].forEach(id=>document.getElementById(id).style.display='none');
+  initStrength('chestBox'); initStrength('backBox'); initStrength('legsBox');
+  attachLibButton('chestBox'); attachLibButton('backBox'); attachLibButton('legsBox');
+  document.getElementById('trackExercises').innerHTML=''; resetBikeUI(); resetBJJ(); resetWalk();
+  resetHRInputs();
+  setKPIs({totalCNS:0,tss:0,totalVolume:0});
+  const saved=store[curKey]; if(saved){ setKPIs(saved); loadHRFromStore(saved); }
+  dayModal.classList.add('show');
+}
+
+function addStartTrainingButtonToDay(dayKey){
+  // Remove existing start training button if present
+  const existing = document.getElementById('calendarStartTrainingBtn');
+  if(existing) existing.remove();
+  
+  // Check if this day has a workout saved
+  const dayData = store[dayKey];
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const hasWorkout = weekScheduleData[dayKey] && weekScheduleData[dayKey].sessions;
+  
+  if(!hasWorkout && (!dayData || !dayData.modalities || Object.keys(dayData.modalities).length === 0)){
+    return; // No workout to start
+  }
+  
+  // Create START TRAINING button
+  const dayPanel = document.getElementById('dayPanel');
+  const headerRow = dayPanel?.querySelector('.row.no-print');
+  
+  if(headerRow){
+    const startBtn = document.createElement('button');
+    startBtn.id = 'calendarStartTrainingBtn';
+    startBtn.className = 'btn primary';
+    startBtn.style.cssText = 'padding:8px 16px;font-size:14px;font-weight:700;margin-right:8px';
+    startBtn.innerHTML = '▶️ START TRAINING';
+    startBtn.onclick = () => startTrainingFromCalendar(dayKey);
+    
+    // Simply prepend to the row (add as first element)
+    headerRow.insertBefore(startBtn, headerRow.firstChild);
+  }
+}
+
+function startTrainingFromCalendar(dayKey){
+  // Get the workout for this day
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const daySchedule = weekScheduleData[dayKey];
+  
+  if(!daySchedule || !daySchedule.sessions){
+    alert('No workout found for this day. Please generate a schedule first.');
+    return;
+  }
+  
+  // Find the S&C workout
+  const scSession = daySchedule.sessions.find(s => s.type === 'Strength & Conditioning');
+  
+  if(!scSession || !scSession.workout){
+    alert('No S&C workout found. Please complete the Auto-Scheduler first.');
+    return;
+  }
+  
+  // Open training logger with this workout
+  currentTrainingDay = dayKey;
+  const loggerContent = document.getElementById('trainingLoggerContent');
+  loggerContent.innerHTML = createInteractiveWorkout(scSession.workout, dayKey);
+  document.getElementById('trainingLoggerModal').classList.add('show');
+}
+
+function displayDaySchedule(dayKey){
+  // Check if this day has scheduled sessions
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const dayData = weekScheduleData[dayKey];
+  
+  if(!dayData || !dayData.sessions || dayData.sessions.length === 0){
+    return; // No schedule to display
+  }
+  
+  // Create schedule display in day modal
+  const dayPanel = document.getElementById('dayPanel');
+  const existingSchedule = document.getElementById('dayScheduleDisplay');
+  if(existingSchedule) existingSchedule.remove();
+  
+  const scheduleDiv = document.createElement('div');
+  scheduleDiv.id = 'dayScheduleDisplay';
+  scheduleDiv.style.cssText = 'margin-bottom:12px;padding:12px;background:#0d1714;border:1px solid var(--accent);border-radius:8px';
+  
+  let html = '<div style="font-weight:700;color:var(--accent);margin-bottom:8px">📅 TODAY\'S SCHEDULE:</div>';
+  
+  // Sort sessions by time
+  const sortedSessions = dayData.sessions.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+  
+  sortedSessions.forEach(session => {
+    html += `<div style="padding:8px;margin:4px 0;background:#0a0e14;border-left:3px solid #00ccff;border-radius:4px">`;
+    html += `<div style="font-weight:700;color:#00ccff">${session.time || 'TBD'} - ${session.type || 'Training'}</div>`;
+    if(session.duration) html += `<div class="muted sm">Duration: ${session.duration} min</div>`;
+    html += `</div>`;
+  });
+  
+  scheduleDiv.innerHTML = html;
+  
+  // Insert at top of panel
+  const firstKPI = dayPanel.querySelector('.row');
+  if(firstKPI) firstKPI.before(scheduleDiv);
+}
 
 /* ========= Boot ========= */
 function renderZoneOnBoot(){ renderZoneChips(); }
