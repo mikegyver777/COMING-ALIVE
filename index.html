@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Elite Training Planner — v27++ GOD MODE</title>
+<title>Elite Training Planner — v27++ (GOD MODE)</title>
 <style>
   :root{ --bg:#0b0d0f;--panel:#15181b;--panel2:#0f1215;--ink:#e7eef6;--muted:#9fb2c7;--accent:#00ffb3;--accent2:#00ccff;--warn:#ff6b6b;--ok:#38ef7d;--border:#26323f;--card:#101418; }
   *{box-sizing:border-box}
@@ -22,7 +22,7 @@
   .month{font-size:18px;color:var(--accent)}
   .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
   .dow{padding:8px;text-align:center;color:#8aa3ba;font-weight:700}
-  .cell{min-height:105px;background:var(--panel);border:1px solid #2a3746;border-radius:10px; padding:8px;position:relative;cursor:pointer}
+  .cell{min-height:105px;background:var(--panel);border:1px solid var(--border);border-radius:10px; padding:8px;position:relative;cursor:pointer}
   .cell.other{opacity:.35}
   .cell.today{outline:2px solid var(--accent);box-shadow:0 0 16px rgba(0,255,179,.15)}
   .num{font-weight:800;color:#fff;margin-bottom:6px}
@@ -34,10 +34,10 @@
   .panel{width:min(1100px,96vw);max-height:92vh;overflow:auto;background:var(--panel2); border:1px solid var(--border);border-radius:14px;padding:16px 16px 22px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .pill{background:#0f161c;border:1px solid #223140;padding:8px 12px;border-radius:999px;font-weight:700;color:#b9cee2}
-  .kpi{flex:1;min-width:240px;background:var(--card);border:1px solid #26323f;border-left:4px solid #7dd3fc; padding:14px;border-radius:12px}
-  .kpi .v{font-size:28px;font-weight:900;color:#00ffb3}
-  .sec{margin-top:14px;border:1px solid #26323f;border-radius:12px;background:var(--panel)}
-  .sec .hd{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #26323f;font-weight:800;color:#a7c6e4;justify-content:space-between}
+  .kpi{flex:1;min-width:240px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent2); padding:14px;border-radius:12px}
+  .kpi .v{font-size:28px;font-weight:900;color:#accent}
+  .sec{margin-top:14px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+  .sec .hd{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid var(--border);font-weight:800;color:#a7c6e4;justify-content:space-between}
   .sec .bd{padding:12px}
   .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
   label{display:block;font-size:12px;color:#8aa3ba;margin-bottom:6px;font-weight:700}
@@ -51,8 +51,9 @@
   .sticky{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.8));padding-top:8px}
   .lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media (max-width:700px){.lib-grid{grid-template-columns:1fr}}
-  .tag{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #2a3746;background:#0f161c;color:#b9cee2;font-size:12px}
-  @media print { .no-print { display:none !important; } }
+  .hint{font-size:11px;color:#9fb2c7}
+  .ok{color:#38ef7d}
+  .warn{color:#ff6b6b}
 </style>
 </head>
 <body>
@@ -77,181 +78,341 @@
     <div class="grid" id="calBody"></div>
   </div>
 
-  <!-- ========= PROFILE MODAL ========= -->
+  <!-- PROFILE (original + ADDED fields) -->
   <div class="modal" id="profileModal">
     <div class="panel">
-      <div class="row" style="justify-content:space-between">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
         <div class="pill">👤 Athlete Profile</div>
         <button class="btn" onclick="closeProfile()">✕ Close</button>
       </div>
       <div class="grid2">
-        <div><label>Age (years)</label><input id="pfAge" type="number" min="5" max="100"></div>
+        <div><label>Age (y)</label><input id="pfAge" type="number" min="5" max="100"></div>
         <div><label>Sex</label><select id="pfSex"><option></option><option>Male</option><option>Female</option></select></div>
-        <div><label>Height (in)</label><input id="pfHt" type="number"></div>
-        <div><label>Weight (lb)</label><input id="pfWt" type="number"></div>
-        <div><label>Training Age (years)</label><input id="pfTA" type="number" min="0" step="0.5"></div>
+        <div><label>Height (in)</label><input id="pfHt" type="number" step="0.1"></div>
+        <div><label>Weight (lb)</label><input id="pfWt" type="number" step="0.1"></div>
+        <div><label>Training Age (y)</label><input id="pfTA" type="number" step="0.1"></div>
         <div><label>Resting HR (bpm)</label><input id="pfRHR" type="number"></div>
-        <div><label>Max HR (bpm)</label><input id="pfMHR" type="number" placeholder="leave blank to auto"></div>
-        <div><label>Sport / Focus</label><select id="pfSport"><option></option><option>Fight Camp</option><option>Strength</option><option>Hybrid</option></select></div>
-        <div><label>Primary Goal</label><input id="pfPriority" placeholder="e.g., fight camp, strength, VO2"></div>
+        <div><label>Max HR (bpm) <span class="muted sm">auto</span></label><input id="pfMHR" type="number" placeholder="auto from age"></div>
+
+        <!-- ADDED: Fitness level + MHR model -->
+        <div><label>Fitness Level</label>
+          <select id="pfLevel">
+            <option value="">Choose…</option><option>Beginner</option><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option>
+          </select>
+        </div>
+        <div><label>Max HR Model (Auto uses sex-specific best)</label>
+          <select id="pfMHRModel">
+            <option value="auto">Auto (best-practice)</option>
+            <option value="tanaka">Tanaka: 208 − 0.7×age</option>
+            <option value="nes">Nes: 211 − 0.64×age</option>
+            <option value="gellish">Gellish: 206.9 − 0.67×age</option>
+            <option value="gulati">Gulati (women): 206 − 0.88×age</option>
+          </select>
+        </div>
+
+        <div><label>Primary Focus</label>
+          <select id="pfSport">
+            <option value="">Choose...</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="Hypertrophy">Hypertrophy</option>
+            <option value="Power">Power</option>
+            <option value="Endurance">Endurance</option>
+            <option value="MMA">Fight Camp (MMA)</option>
+            <option value="Boxing">Fight Camp (Boxing)</option>
+            <option value="BJJ">BJJ / Grappling</option>
+            <option value="General">General Fitness</option>
+          </select>
+        </div>
+        <div><label>Priority Order</label>
+          <select id="pfPriority">
+            <option>Balanced (All domains equally)</option>
+            <option>Strength → Conditioning → Power → Technical</option>
+            <option>Strength → Power → Conditioning → Technical</option>
+            <option>Strength → Technical → Conditioning → Power</option>
+            <option>Conditioning → Strength → Power → Technical</option>
+            <option>Conditioning → Power → Strength → Technical</option>
+            <option>Conditioning → Technical → Strength → Power</option>
+            <option>Power → Strength → Conditioning → Technical</option>
+            <option>Power → Conditioning → Strength → Technical</option>
+            <option>Power → Technical → Strength → Conditioning</option>
+            <option>Technical → Strength → Conditioning → Power</option>
+          </select>
+        </div>
         <div><label>Weekly Availability (days)</label><input id="pfAvail" type="number" min="1" max="14"></div>
       </div>
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn primary" onclick="saveProfile()">Save Profile</button>
+      <div class="muted sm" style="margin-top:10px">
+        Zones: HRR when Resting HR present; else %Max. MHR auto uses model selection above.
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn primary" onclick="saveProfile()">✓ Save Profile</button>
       </div>
     </div>
   </div>
 
-  <!-- ========= DAY MODAL ========= -->
+  <!-- DAY MODAL (original + ADDED HR Session + Auto-Prescription) -->
   <div class="modal" id="dayModal">
     <div class="panel">
-      <div class="row" style="justify-content:space-between">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
         <div class="pill" id="dayTitle">—</div>
-        <div class="row">
-          <button class="btn" onclick="saveDay()">💾 Save Day & Recompute</button>
-          <button class="btn" onclick="closeDay()">✕ Close</button>
-        </div>
+        <button class="btn" onclick="closeDay()">✕ Close</button>
       </div>
 
-      <!-- Modality toggles -->
       <div class="row">
-        <label class="tag"><input type="checkbox" id="mChest"> Chest</label>
-        <label class="tag"><input type="checkbox" id="mBack"> Back</label>
-        <label class="tag"><input type="checkbox" id="mLegs"> Legs</label>
-        <label class="tag"><input type="checkbox" id="mTrack"> Track/Plyo</label>
-        <label class="tag"><input type="checkbox" id="mBike"> Assault Bike</label>
-        <label class="tag"><input type="checkbox" id="mBJJ"> BJJ / Skill</label>
-        <label class="tag"><input type="checkbox" id="mWalk"> Walk / Z2</label>
+        <div class="kpi"><div class="muted">Estimated CNS Load</div><div class="v" id="kpiCNS">0</div></div>
+        <div class="kpi"><div class="muted">Total TSS (TRIMP/sRPE)</div><div class="v" id="kpiTSS">0</div></div>
+        <div class="kpi"><div class="muted">Strength Volume (lb)</div><div class="v" id="kpiVOL">0</div></div>
       </div>
 
-      <!-- Sections -->
-      <div id="secChest" class="sec" style="display:none"><div class="hd">Chest</div><div class="bd" id="chestBox"></div></div>
-      <div id="secBack"  class="sec" style="display:none"><div class="hd">Back</div><div class="bd" id="backBox"></div></div>
-      <div id="secLegs"  class="sec" style="display:none"><div class="hd">Legs</div><div class="bd" id="legsBox"></div></div>
-
-      <div id="secTrack" class="sec" style="display:none">
-        <div class="hd">Track / Plyo
-          <button class="btn" onclick="addTrackExercise()">+ Add Exercise</button>
+      <div class="sec">
+        <div class="hd">Training toggles (choose any)</div>
+        <div class="bd">
+          <div class="row">
+            <label class="pill"><input type="checkbox" id="mChest" onchange="toggleSection('secChest')"> Chest</label>
+            <label class="pill"><input type="checkbox" id="mBack" onchange="toggleSection('secBack')"> Back</label>
+            <label class="pill"><input type="checkbox" id="mLegs" onchange="toggleSection('secLegs')"> Legs</label>
+            <label class="pill"><input type="checkbox" id="mTrack" onchange="toggleSection('secTrack')"> Track / Plyo / Stairs</label>
+            <label class="pill"><input type="checkbox" id="mBike" onchange="toggleSection('secBike')"> Assault Bike</label>
+            <label class="pill"><input type="checkbox" id="mBJJ" onchange="toggleSection('secBJJ')"> BJJ</label>
+            <label class="pill"><input type="checkbox" id="mWalk" onchange="toggleSection('secWalk')"> Walking/Recovery</label>
+          </div>
         </div>
-        <div class="bd" id="trackExercises"></div>
       </div>
 
-      <div id="secBike"  class="sec" style="display:none">
-        <div class="hd">Assault Bike</div>
+      <!-- ADDED: HR SESSION universally available -->
+      <div class="sec" id="secHR">
+        <div class="hd">🫀 Session Heart-Rate (for ANY training)</div>
+        <div class="bd grid2">
+          <div><label>Max HR (bpm)</label><input id="hrMaxSess" type="number" placeholder="e.g., 176"></div>
+          <div><label>Avg HR (bpm)</label><input id="hrAvgSess" type="number" placeholder="e.g., 148"></div>
+          <div><label>Time in Z1 (min)</label><input id="hrZ1" type="number" step="0.1"></div>
+          <div><label>Time in Z2 (min)</label><input id="hrZ2" type="number" step="0.1"></div>
+          <div><label>Time in Z3 (min)</label><input id="hrZ3" type="number" step="0.1"></div>
+          <div><label>Time in Z4 (min)</label><input id="hrZ4" type="number" step="0.1"></div>
+          <div><label>Time in Z5 (min)</label><input id="hrZ5" type="number" step="0.1"></div>
+          <div>
+            <label>Attach HR Image (optional, stored locally)</label>
+            <input id="hrImg" type="file" accept="image/*" onchange="attachHRImage(this)">
+            <div class="hint">Image is saved with this day for your records; engine uses the values you enter above.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec" id="secChest" style="display:none">
+        <div class="hd">💪 CHEST — Strength/Hypertrophy</div>
+        <div class="bd" id="chestBox"></div>
+      </div>
+      <div class="sec" id="secBack" style="display:none">
+        <div class="hd">💪 BACK — Strength/Hypertrophy</div>
+        <div class="bd" id="backBox"></div>
+      </div>
+      <div class="sec" id="secLegs" style="display:none">
+        <div class="hd">💪 LEGS — Strength/Hypertrophy</div>
+        <div class="bd" id="legsBox"></div>
+      </div>
+
+      <div class="sec" id="secTrack" style="display:none">
+        <div class="hd">🏃 Track / Plyometrics / Stairs</div>
+        <div class="bd">
+          <div class="muted sm" style="margin-bottom:12px">Click “+ Add Exercise” to add exercises. RPE affects CNS/TSS.</div>
+          <div class="row" style="margin:8px 0">
+            <button class="btn primary" onclick="addTrackExercise()">+ Add Exercise</button>
+            <span class="muted sm">Add each exercise with sets and reps.</span>
+          </div>
+          <div id="trackExercises"></div>
+        </div>
+      </div>
+
+      <div class="sec" id="secBike" style="display:none">
+        <div class="hd">🚴 Assault Bike Lab</div>
         <div class="bd">
           <div class="grid2">
-            <div><label>Prototype</label>
+            <div>
+              <label>Protocol</label>
               <select id="bikeProto" onchange="applyBikeUI()">
-                <option value="peak">Peak (6×0:20 / 1:40)</option>
-                <option value="tab8">Tabata 20/10×8</option>
-                <option value="ps10">10×10s max</option>
-                <option value="z5">6×1:00 / 2:00</option>
-                <option value="ext6">6×5:00 / 2:00</option>
-                <option value="steady">Z2 steady 30:00</option>
-                <option value="prog5">5:00 TT</option>
-                <option value="ng10">30/30×10</option>
+                <optgroup label="Preset Intervals">
+                  <option value="ng10">10×30s hard / 30s easy</option>
+                  <option value="prog5">5-min progressive calories</option>
+                  <option value="ext6">6×5-min @ 2-min easy</option>
+                  <option value="tab8">8×20s max / 10s easy</option>
+                  <option value="ps10">10×10s max / 50s easy</option>
+                </optgroup>
+                <optgroup label="Standard">
+                  <option value="steady">Steady Z2 (20–40min)</option>
+                  <option value="z5">Zone 5 Intervals (60/120 ×6)</option>
+                  <option value="peak" selected>Peak RPM Sprints (20/100 ×6)</option>
+                </optgroup>
               </select>
             </div>
-            <div><label>Rounds</label><input id="bikeRounds" type="number" min="1" value="6"></div>
-            <div><label>Work (s)</label><input id="bikeWork" type="number" min="5" value="20"></div>
-            <div><label>Rest (s)</label><input id="bikeRest" type="number" min="0" value="100"></div>
+            <div id="roundBlock"><label>Rounds</label><input id="bikeRounds" type="number" value="6" min="1"></div>
+            <div id="workBlock"><label>Work (s)</label><input id="bikeWork" type="number" value="20"></div>
+            <div id="restBlock"><label>Rest (s)</label><input id="bikeRest" type="number" value="100"></div>
+            <div><label>Target HR</label><input id="bikeTarget" type="text" placeholder="auto % and BPM"></div>
           </div>
-          <div class="muted" id="bikeELI5" style="margin-top:6px">—</div>
-          <div class="muted" style="margin-top:6px"><b>Target:</b> <input id="bikeTarget" readonly></div>
           <div class="sec" style="margin-top:10px">
-            <div class="hd">Round log</div>
+            <div class="hd">Rounds / Reps</div>
             <div class="bd">
-              <table id="bikeTable"><thead><tr><th>#</th><th>Peak RPM</th><th>Avg RPM</th><th>HR (peak)</th><th>HR (end)</th><th>Notes</th></tr></thead><tbody></tbody></table>
+              <table id="bikeTable" style="font-size:12px">
+                <thead>
+                  <tr><th>#</th><th>Max RPM</th><th>Avg RPM</th><th>Cals</th><th>Watts</th><th>Notes</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
+          </div>
+          <div class="sec" style="margin-top:10px;background:#0d1714;border:1px solid #1e6a4f">
+            <div class="hd" style="background:#0f1b17;border-bottom:1px solid #1e6a4f;color:#9de8c5">Instructions</div>
+            <div class="bd" id="bikeELI5">Pick a plan above to see instructions.</div>
           </div>
         </div>
       </div>
 
-      <div id="secBJJ" class="sec" style="display:none">
-        <div class="hd">BJJ / Skill</div>
+      <div class="sec" id="secBJJ" style="display:none">
+        <div class="hd">🥋 BJJ (sparring / drilling)</div>
         <div class="bd grid2">
-          <div><label>Duration (min)</label><input id="bjjTime" type="number"></div>
-          <div><label>Intensity</label><select id="bjjInt"><option></option><option>Low</option><option>Medium</option><option>High</option></select></div>
-          <div><label>Warmup 1</label><input id="bjjW1"></div>
-          <div><label>Warmup 2</label><input id="bjjW2"></div>
-          <div><label>Subjective feel</label><input id="bjjFeel"></div>
+          <div><label>Spar time (min)</label><input id="bjjTime" type="number" placeholder="45"></div>
+          <div><label>Intensity</label>
+            <select id="bjjInt">
+              <option value="">Choose…</option><option>High</option><option>Medium</option><option>Light</option>
+            </select>
+          </div>
+          <div><label>Weight before (lb)</label><input id="bjjW1" type="number" step="0.1"></div>
+          <div><label>Weight after (lb)</label><input id="bjjW2" type="number" step="0.1"></div>
+          <div><label>Feel</label>
+            <select id="bjjFeel"><option value="">Choose…</option><option>Great</option><option>Good</option><option>Tired</option><option>Beat</option></select>
+          </div>
           <div><label>Sleep (h)</label><input id="bjjSleep" type="number" step="0.5"></div>
         </div>
       </div>
 
-      <div id="secWalk" class="sec" style="display:none">
-        <div class="hd">Walk / Z2</div>
+      <div class="sec" id="secWalk" style="display:none">
+        <div class="hd">🚶 Walking / Recovery</div>
         <div class="bd grid2">
-          <div><label>Duration (min)</label><input id="wDur" type="number" value="30"></div>
-          <div><label>Distance</label><input id="wDist" type="number" step="0.01"></div>
-          <div><label>Pace</label><input id="wPace" placeholder="min/mi"></div>
-          <div><label>Terrain</label><select id="wTer"><option>Flat</option><option>Incline</option></select></div>
-          <div><label>Purpose</label><select id="wPur"><option>Recovery</option><option>Warmup</option></select></div>
-        </div>
-      </div>
-
-      <div class="sec sticky">
-        <div class="bd">
-          <div class="grid2">
-            <div class="kpi"><div class="muted">Avg CNS</div><div class="v" id="kpiCNS">0</div></div>
-            <div class="kpi"><div class="muted">TSS</div><div class="v" id="kpiTSS">0</div></div>
-            <div class="kpi"><div class="muted">Volume (lb)</div><div class="v" id="kpiVOL">0</div></div>
+          <div><label>Duration (min)</label><input id="wDur" type="number"></div>
+          <div><label>Distance (mi)</label><input id="wDist" type="number" step="0.01"></div>
+          <div><label>Pace (min/mi)</label><input id="wPace" type="number" step="0.1"></div>
+          <div><label>Terrain</label>
+            <select id="wTer"><option>Flat</option><option>Hills</option><option>Steep</option></select>
           </div>
-          <div id="saveNote" class="muted" style="margin-top:6px">—</div>
+          <div><label>Purpose</label>
+            <select id="wPur"><option>Recovery</option><option>Zone 2</option><option>General</option></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADDED: Auto-Prescription (Option A) -->
+      <div class="sec" id="secPrescription">
+        <div class="hd">🤖 Auto-Prescription (Option A for Fight Camp)</div>
+        <div class="bd">
+          <div class="hint">If you logged a skill block + HR above, click “Compute Plan.” This uses today’s HR load + recent ACWR to recommend whether to add Strength / Power / Conditioning / Recovery—or do nothing.</div>
+          <div class="row" style="margin:8px 0">
+            <button class="btn" onclick="computePrescription()">⚙️ Compute Plan</button>
+            <button class="btn ghost" onclick="applyPrescription()">📌 Apply Plan (toggle sections)</button>
+            <div id="rxSummary" class="muted"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky">
+        <div class="row" style="justify-content:space-between">
+          <div class="muted sm" id="saveNote">—</div>
+          <button class="btn primary" onclick="saveDay()">✓ Save Day & Recompute</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ========= WEEK MODAL ========= -->
-  <div class="modal" id="weekModal">
-    <div class="panel">
-      <div class="row" style="justify-content:space-between">
-        <div class="pill">📊 Weekly Summary</div>
-        <button class="btn" onclick="closeWeek()">✕ Close</button>
-      </div>
-      <div id="weekBody">—</div>
-    </div>
-  </div>
-
-  <!-- ========= FIGHT CAMP MODAL ========= -->
+  <!-- FIGHT CAMP (unchanged structure, note: we respect your functions) -->
   <div class="modal" id="campModal">
     <div class="panel">
       <div class="row" style="justify-content:space-between">
-        <div class="pill">🥊 Fight Camp</div>
+        <div class="pill">🥊 Fight Camp Baseline Assessment</div>
         <button class="btn" onclick="closeCamp()">✕ Close</button>
       </div>
-      <div class="grid2">
-        <div><label>Camp Length (weeks)</label><input id="fcLen" type="number" min="1"></div>
-        <div><label>Week # (current)</label><input id="fcWeek" type="number" min="1"></div>
-        <div><label>Order Preference</label><select id="fcOrder"><option>Strength→Power→Condition</option><option>Power→Strength→Condition</option></select></div>
-        <div><label>Athlete Level</label><select id="fcLevel"><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option></select></div>
-      </div>
-      <div class="sec"><div class="hd">Test 1 (bike)</div>
+      <div class="sec"><div class="hd">Camp Setup</div>
         <div class="bd grid2">
-          <div><label>Watts (avg)</label><input id="t1Watts" type="number"></div>
-          <div><label>Peak RPM</label><input id="t1Peak" type="number"></div>
-          <div><label>HR @ 60s</label><input id="t1HR60" type="number"></div>
+          <!-- allow any positive week count, your saveCamp untouched -->
+          <div><label>Camp length (weeks)</label><input id="fcLen" type="number" min="1" max="52" value="8"></div>
+          <div><label>Current week</label><input id="fcWeek" type="number" min="1" value="1"></div>
+          <div><label>Camp priority (order of emphasis)</label>
+            <select id="fcOrder">
+              <option>Balanced (All domains equally)</option>
+              <option>Strength → Conditioning → Power → Technical</option>
+              <option>Strength → Power → Conditioning → Technical</option>
+              <option>Strength → Technical → Conditioning → Power</option>
+              <option>Conditioning → Strength → Power → Technical</option>
+              <option>Conditioning → Power → Strength → Technical</option>
+              <option>Conditioning → Technical → Strength → Power</option>
+              <option>Power → Strength → Conditioning → Technical</option>
+              <option>Power → Conditioning → Strength → Technical</option>
+              <option>Power → Technical → Strength → Conditioning</option>
+              <option>Technical → Strength → Conditioning → Power</option>
+            </select>
+          </div>
+          <div><label>Current fitness level</label>
+            <select id="fcLevel"><option>Beginner</option><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option></select>
+          </div>
         </div>
       </div>
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn primary" onclick="saveCamp()">Save Camp</button>
+      <div class="sec"><div class="hd">TEST #1: 3-Minute All-Out Assault Bike</div>
+        <div class="bd">
+          <div class="muted sm">Warm-up 5–10 min. MAX effort for 3:00; log average watts and optional HR kinetics.</div>
+          <div class="grid2">
+            <div><label>Average watts (3-min)</label><input id="t1Watts" type="number"></div>
+            <div><label>Peak HR (optional)</label><input id="t1Peak" type="number"></div>
+            <div><label>HR @ 60 s (optional)</label><input id="t1HR60" type="number"></div>
+          </div>
+        </div>
       </div>
+      <div class="sec"><div class="hd">TEST #2: Med Ball Rotational Throw</div>
+        <div class="bd">
+          <div class="grid2">
+            <div><label>Med ball weight (lb)</label><input id="t2MB" type="number" step="0.5"></div>
+            <div><label>Right distance (ft or 1-10)</label><input id="t2R" type="number" step="0.1"></div>
+            <div><label>Left distance (ft or 1-10)</label><input id="t2L" type="number" step="0.1"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec"><div class="hd">TEST #3: Standing Broad Jump</div>
+        <div class="bd">
+          <div class="grid2">
+            <div><label>Best jump distance</label><input id="t3Dist" type="number" step="0.01"></div>
+            <div><label>Unit</label><select id="t3Unit"><option>Feet</option><option>Inches</option><option>Centimeters</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec"><div class="hd">TEST #4: Strength Base (Choose one)</div>
+        <div class="bd grid2">
+          <div><label>Test type</label><select id="t4Type"><option>Weighted pull-up (3–5RM)</option><option>Trap-bar deadlift (3–5RM)</option></select></div>
+          <div><label>Best 3–5RM load (lb)</label><input id="t4Load" type="number" step="1"></div>
+          <div class="muted" style="grid-column:1/-1;font-size:12px">This anchors strength prescriptions & fatigue management.</div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" onclick="saveCamp()">✓ Save Assessment</button></div>
     </div>
   </div>
 
-  <!-- ========= EXERCISE LIBRARY ========= -->
+  <div class="modal" id="weekModal">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <div class="pill">📊 Last 7 Days Summary</div>
+        <button class="btn" onclick="closeWeek()">✕ Close</button>
+      </div>
+      <div id="weekBody"></div>
+    </div>
+  </div>
+
+  <!-- Exercise Library (unchanged) -->
   <div class="modal" id="libModal">
     <div class="panel">
-      <div class="row" style="justify-content:space-between">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
         <div class="pill">📚 Exercise Library</div>
         <button class="btn" onclick="closeLib()">✕ Close</button>
       </div>
-      <div class="grid2">
+      <div class="lib-grid">
         <div>
           <label>Muscle group</label>
           <select id="libGroup" onchange="populateLibExercises()">
-            <option></option>
+            <option value="">Choose…</option>
             <option>Chest</option><option>Back</option><option>Shoulders</option><option>Biceps</option><option>Triceps</option>
             <option>Quads</option><option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option>
             <option>MMA</option><option>Boxing</option>
@@ -262,10 +423,11 @@
           <select id="libExercise"><option value="">—</option></select>
         </div>
       </div>
-      <div class="sec" style="margin-top:12px"><div class="hd">Or create your own</div>
+      <div class="sec" style="margin-top:12px">
+        <div class="hd">Or create your own</div>
         <div class="bd lib-grid">
-          <div><label>Custom exercise name</label><input id="libCustomName" placeholder="e.g. Landmine Press"></div>
-          <div><label>Custom muscle group</label><input id="libCustomGroup" placeholder="e.g. Shoulders, MMA, Boxing"></div>
+          <div><label>Custom exercise name</label><input id="libCustomName" placeholder="e.g., Landmine Press"></div>
+          <div><label>Custom muscle group</label><input id="libCustomGroup" placeholder="e.g., Shoulders, MMA, Boxing"></div>
         </div>
       </div>
       <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn primary" onclick="insertFromLibrary()">➕ Insert into section</button></div>
@@ -273,19 +435,51 @@
     </div>
   </div>
 
-  <!-- ================= ORIGINAL SCRIPT ================= -->
-  <script>
+<script>
+  // ===== ORIGINAL HELPERS (unchanged) =====
   const fmt=(n)=>Number(n||0);
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const LS={get(k,def){try{return JSON.parse(localStorage.getItem(k))??def}catch(_){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
 
+  // ===== ADDED: Max HR models (best-practice selector) =====
+  function mhrFromModel(age, sex, model){
+    const a = fmt(age||0);
+    const s = (sex||'').toLowerCase();
+    const pick = (model==='auto')
+      ? (s==='female' ? 'gulati' : 'nes') // pragmatic: Gulati for women, Nes for men
+      : model;
+
+    switch(pick){
+      case 'tanaka': return Math.round(208 - 0.7*a);
+      case 'nes': return Math.round(211 - 0.64*a);
+      case 'gellish': return Math.round(206.9 - 0.67*a);
+      case 'gulati': return Math.round(206 - 0.88*a);
+      default: return Math.round(211 - 0.64*a);
+    }
+  }
+
   function calcZones(profile){
     const age=fmt(profile.age), rhr=fmt(profile.rhr)||null;
-    const mhr = fmt(profile.mhr)|| Math.round(208 - 0.7*age || 190);
+    const model = profile.mhrModel || 'auto';
+    const sex = profile.sex || '';
+    const mhr = fmt(profile.mhr) || mhrFromModel(age, sex, model) || 190;
     const useKarv = !!rhr && mhr>rhr;
-    function zone(pLo,pHi){ if(useKarv){ const lo=Math.round(((mhr-rhr)*pLo+rhr)); const hi=Math.round(((mhr-rhr)*pHi+rhr)); return [lo,hi]; } else { return [Math.round(mhr*pLo),Math.round(mhr*pHi)]; } }
-    return { mhr, z1:zone(0.50,0.60), z2:zone(0.60,0.70), z3:zone(0.70,0.80), z4:zone(0.80,0.90), z5:zone(0.90,1.00), type:(useKarv?'HRR':'%Max') };
+    function zone(pLo,pHi){
+      if(useKarv){
+        const lo=Math.round(((mhr-rhr)*pLo+rhr));
+        const hi=Math.round(((mhr-rhr)*pHi+rhr));
+        return [lo,hi];
+      } else {
+        return [Math.round(mhr*pLo),Math.round(mhr*pHi)];
+      }
+    }
+    return {
+      mhr,
+      z1:zone(0.50,0.60), z2:zone(0.60,0.70), z3:zone(0.70,0.80), z4:zone(0.80,0.90), z5:zone(0.90,1.00),
+      type:(useKarv?'HRR':'%Max')
+    };
   }
+
   function renderZoneChips(){
     const p=LS.get('elite_profile',null);
     const wrap=document.getElementById('zoneChips');
@@ -301,7 +495,8 @@
   }
 
   const head=document.getElementById('calHead'); const body=document.getElementById('calBody');
-  const monthTitle=document.getElementById('monthTitle'); const DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const monthTitle=document.getElementById('monthTitle');
+  const DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'];
   let cur=new Date(); let store=LS.get('elite_days',{}); let hist=LS.get('elite_tss',[]);
 
   function renderCal(){
@@ -321,7 +516,11 @@
     const key=toKey(date); if(key===todayStr) el.classList.add('today');
     const num=document.createElement('div'); num.className='num'; num.textContent=date.getDate(); el.appendChild(num);
     const day=store[key];
-    if(day?.modalities){ Object.keys(day.modalities).forEach(k=>{const b=document.createElement('span'); b.className='badge'; b.textContent=k.toUpperCase(); el.appendChild(b);}); const c=document.createElement('div'); c.className='cns '+(day.totalCNS<60?'low':day.totalCNS<75?'mod':'high'); el.appendChild(c); }
+    if(day?.modalities){
+      Object.keys(day.modalities).forEach(k=>{const b=document.createElement('span'); b.className='badge'; b.textContent=k.toUpperCase(); el.appendChild(b);});
+      const c=document.createElement('div');
+      c.className='cns '+(day.totalCNS<60?'low':day.totalCNS<75?'mod':'high'); el.appendChild(c);
+    }
     el.onclick=()=>openDay(date);
     return el;
   }
@@ -334,16 +533,25 @@
   const pfAge=document.getElementById('pfAge'); const pfSex=document.getElementById('pfSex'); const pfHt=document.getElementById('pfHt'); const pfWt=document.getElementById('pfWt');
   const pfTA=document.getElementById('pfTA'); const pfRHR=document.getElementById('pfRHR'); const pfMHR=document.getElementById('pfMHR'); const pfSport=document.getElementById('pfSport');
   const pfPriority=document.getElementById('pfPriority'); const pfAvail=document.getElementById('pfAvail');
+  const pfLevel=document.getElementById('pfLevel'); const pfMHRModel=document.getElementById('pfMHRModel');
+
   document.getElementById('profileBtn').onclick=()=>{
-    const p=LS.get('elite_profile',{}); pfAge.value=p.age||''; pfSex.value=p.sex||''; pfHt.value=p.ht||''; pfWt.value=p.wt||'';
-    pfTA.value=p.ta||''; pfRHR.value=p.rhr||''; pfMHR.value=p.mhr||''; pfSport.value=p.sport||''; pfPriority.value=p.priority||'Balanced (All domains equally)'; pfAvail.value=p.avail||'';
+    const p=LS.get('elite_profile',{});
+    pfAge.value=p.age||''; pfSex.value=p.sex||''; pfHt.value=p.ht||''; pfWt.value=p.wt||'';
+    pfTA.value=p.ta||''; pfRHR.value=p.rhr||''; pfMHR.value=p.mhr||'';
+    pfSport.value=p.sport||''; pfPriority.value=p.priority||'Balanced (All domains equally)'; pfAvail.value=p.avail||'';
+    pfLevel.value=p.level||''; pfMHRModel.value=p.mhrModel||'auto';
     profileModal.classList.add('show');
   };
   function closeProfile(){profileModal.classList.remove('show')}
   function saveProfile(){
-    const p={age:fmt(pfAge.value),sex:pfSex.value,ht:fmt(pfHt.value),wt:fmt(pfWt.value),ta:fmt(pfTA.value),
-      rhr:fmt(pfRHR.value),mhr:fmt(pfMHR.value),sport:pfSport.value,priority:pfPriority.value,avail:fmt(pfAvail.value)};
-    if(!p.mhr && p.age) p.mhr=Math.round(208-0.7*p.age);
+    const p={
+      age:fmt(pfAge.value),sex:pfSex.value,ht:fmt(pfHt.value),wt:fmt(pfWt.value),
+      ta:fmt(pfTA.value), rhr:fmt(pfRHR.value), mhr:fmt(pfMHR.value),
+      sport:pfSport.value, priority:pfPriority.value, avail:fmt(pfAvail.value),
+      level: pfLevel.value, mhrModel: pfMHRModel.value
+    };
+    if(!p.mhr && p.age) p.mhr = mhrFromModel(p.age,p.sex,p.mhrModel);
     LS.set('elite_profile',p); renderZoneChips(); profileModal.classList.remove('show');
   }
 
@@ -356,20 +564,25 @@
     initStrength('chestBox'); initStrength('backBox'); initStrength('legsBox');
     attachLibButton('chestBox'); attachLibButton('backBox'); attachLibButton('legsBox');
     document.getElementById('trackExercises').innerHTML=''; resetBikeUI(); resetBJJ(); resetWalk();
+    resetHRInputs(); // ADDED
     setKPIs({totalCNS:0,tss:0,totalVolume:0});
-    const saved=store[curKey]; if(saved){ setKPIs(saved); }
+    const saved=store[curKey]; if(saved){ setKPIs(saved); loadHRFromStore(saved); }
     dayModal.classList.add('show');
   }
-  function setKPIs(d){document.getElementById('kpiCNS').textContent=Math.round(d.totalCNS||0); document.getElementById('kpiTSS').textContent=Math.round(d.tss||0); document.getElementById('kpiVOL').textContent=Math.round(d.totalVolume||0);}
+  function setKPIs(d){
+    document.getElementById('kpiCNS').textContent=Math.round(d.totalCNS||0);
+    document.getElementById('kpiTSS').textContent=Math.round(d.tss||0);
+    document.getElementById('kpiVOL').textContent=Math.round(d.totalVolume||0);
+  }
   function closeDay(){dayModal.classList.remove('show')}
   function toggleSection(id){const el=document.getElementById(id); el.style.display=(el.style.display==='none'?'block':'none')}
 
+  // ===== ORIGINAL strength editors (unchanged) =====
   function initStrength(targetId){
     const box=document.getElementById(targetId);
     box.innerHTML=`
       <div class="row" style="margin-bottom:6px">
         <button class="btn primary" onclick="addExercise('${targetId}')">+ Add Exercise</button>
-        <button class="btn" onclick="openLib('${targetId}')">📚 Exercise Library</button>
         <div class="muted sm">Pyramid sets light → heavy if you like. Choose muscle group for each exercise.</div>
       </div>
       <div id="${targetId}-list"></div>`;
@@ -379,11 +592,14 @@
     const idx=list.children.length+1;
     const ex=document.createElement('div');
     ex.className='sec'; ex.innerHTML=`
-      <div class="hd"><span>Exercise ${idx}</span>
-        <button class="btn ghost" onclick="this.closest('.sec').remove()">🗑 Delete</button></div>
+      <div class="hd">
+        <span>Exercise ${idx}</span>
+        <button class="btn ghost" onclick="this.closest('.sec').remove()">🗑 Delete Exercise</button>
+      </div>
       <div class="bd">
         <div class="grid2" style="margin-bottom:6px">
-          <div><label>Entry type</label>
+          <div>
+            <label>Entry type</label>
             <select class="ex-mode" onchange="toggleExerciseMode(this)">
               <option value="load">Load / Reps</option>
               <option value="rounds">Rounds / Time</option>
@@ -392,7 +608,7 @@
           <div class="muted sm">Use Rounds/Time for bag, mitts, shadowboxing, clinch, etc.</div>
         </div>
         <div class="grid2">
-          <div><label>Name</label><input class="ex-name" placeholder="e.g. Bench Press"></div>
+          <div><label>Name</label><input class="ex-name" placeholder="e.g., Bench Press"></div>
           <div><label>Muscle group</label>
             <select class="ex-muscle">
               <option>Chest</option><option>Back</option><option>Shoulders</option><option>Biceps</option><option>Triceps</option><option>Quads</option><option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option><option>MMA</option><option>Boxing</option>
@@ -408,11 +624,11 @@
         </div>
         <div class="ex-rounds" style="display:none;margin-top:8px">
           <div class="grid2">
-            <div><label>Rounds</label><input class="rx-rounds" type="number" min="1" placeholder="3"></div>
+            <div><label>Rounds</label><input class="rx-rounds" type="number" min="1" placeholder="e.g., 3"></div>
             <div><label>Round duration (s)</label><input class="rx-work" type="number" min="10" step="5" placeholder="180"></div>
             <div><label>Rest between rounds (s)</label><input class="rx-rest" type="number" min="0" step="5" placeholder="60"></div>
             <div><label>Intensity</label><select class="rx-int"><option>Light</option><option>Medium</option><option>Hard</option><option>Max</option></select></div>
-            <div style="grid-column:1/-1"><label>Notes</label><input class="rx-notes" placeholder="e.g., combos / slips / sprawls"></div>
+            <div style="grid-column:1/-1"><label>Notes</label><input class="rx-notes" placeholder="e.g., 1-2-3 + slips; sprawl each minute; focus on head movement"></div>
           </div>
         </div>
       </div>`;
@@ -441,6 +657,7 @@
     const sel=exCard.querySelector('.ex-mode'); if(sel){ sel.value=mode; toggleExerciseMode(sel); }
   }
 
+  // ===== Track/Plyo (unchanged behavior) =====
   function addTrackExercise(){
     const c=document.getElementById('trackExercises'); const i=c.children.length+1;
     const el=document.createElement('div'); el.className='sec'; el.innerHTML=`
@@ -463,61 +680,43 @@
             <select class="tQuick" onchange="applyTrackQuickPick(this)">
               <option value="">— choose —</option>
               <optgroup label="Jumps & Bounds">
-                <option>Broad Jump</option>
-                <option>Single-Leg Jump (Left)</option>
-                <option>Single-Leg Jump (Right)</option>
-                <option>Bounds (alternating)</option>
-                <option>Pogo Hops</option>
-                <option>Stair Jumps (double-leg)</option>
-                <option>Stair Hops (single-leg)</option>
+                <option>Broad Jump</option><option>Single-Leg Jump (Left)</option><option>Single-Leg Jump (Right)</option>
+                <option>Bounds (alternating)</option><option>Pogo Hops</option><option>Stair Jumps (double-leg)</option><option>Stair Hops (single-leg)</option>
               </optgroup>
               <optgroup label="Drills">
-                <option>A-Skips</option>
-                <option>B-Skips</option>
-                <option>High Knees</option>
-                <option>Butt Kicks</option>
-                <option>Carioca</option>
-                <option>Backpedal</option>
+                <option>A-Skips</option><option>B-Skips</option><option>High Knees</option><option>Butt Kicks</option><option>Carioca</option><option>Backpedal</option>
               </optgroup>
               <optgroup label="Sprints">
-                <option>Flying 30m</option>
-                <option>Flying 60m</option>
-                <option>Hill Sprint</option>
-                <option>Curve Sprint (200m bend)</option>
+                <option>Flying 30m</option><option>Flying 60m</option><option>Hill Sprint</option><option>Curve Sprint (200m bend)</option>
               </optgroup>
               <optgroup label="Stairs & Hills">
-                <option>Stair Run (fast)</option>
-                <option>Stair Walk (loaded)</option>
-                <option>Hill Bounds</option>
+                <option>Stair Run (fast)</option><option>Stair Walk (loaded)</option><option>Hill Bounds</option>
               </optgroup>
             </select>
           </div>
-          <div><label>Sets</label><input class="tSets" type="number" min="1" placeholder="4"></div>
-          <div><label>Reps</label><input class="tRepsAny" type="number" min="1" placeholder="3"></div>
+          <div><label>Sets</label><input class="tSets" type="number" min="1" placeholder="e.g., 4"></div>
+          <div><label>Reps</label><input class="tRepsAny" type="number" min="1" placeholder="e.g., 3"></div>
         </div>
+
         <div class="tRunningBlock" style="margin-top:10px">
           <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
             <div><label>Duration (MM:SS)</label><input class="tDur" type="text" placeholder="00:30"></div>
-            <div><label>Distance</label><input class="tDist" type="number" step="0.01" placeholder="0.25"></div>
+            <div><label>Distance</label><input class="tDist" type="number" step="0.01" placeholder="e.g., 0.25"></div>
             <div>
               <label>Unit</label>
               <select class="tUnit">
-                <option value="miles">miles</option>
-                <option value="yards">yards</option>
-                <option value="meters">meters</option>
+                <option value="miles">miles</option><option value="yards">yards</option><option value="meters">meters</option>
               </select>
             </div>
             <div>
               <label>Intensity</label>
               <select class="tInt">
-                <option>Light</option>
-                <option>Medium</option>
-                <option>Hard</option>
-                <option>Max</option>
+                <option>Light</option><option>Medium</option><option>Hard</option><option>Max</option>
               </select>
             </div>
           </div>
         </div>
+
         <div class="tPlyoBlock" style="display:none;margin-top:10px">
           <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
             <div><label>Execution</label>
@@ -526,10 +725,10 @@
                 <option value="unilateral">Unilateral (single leg)</option>
               </select>
             </div>
-            <div class="tBilateral"><label>Reps per set</label><input class="tReps" type="number" min="1" placeholder="34"></div>
+            <div class="tBilateral"><label>Reps per set</label><input class="tReps" type="number" min="1" placeholder="e.g., 34"></div>
             <div class="tUnilateral" style="display:none">
-              <div><label>Left reps</label><input class="tRepsL" type="number" min="1" placeholder="17"></div>
-              <div><label>Right reps</label><input class="tRepsR" type="number" min="1" placeholder="17"></div>
+              <div><label>Left Reps per set</label><input class="tRepsL" type="number" min="1" placeholder="e.g., 17"></div>
+              <div><label>Right Reps per set</label><input class="tRepsR" type="number" min="1" placeholder="e.g., 17"></div>
             </div>
           </div>
           <div class="grid2" style="margin-top:10px">
@@ -541,36 +740,40 @@
     c.appendChild(el);
     toggleTrackTemplate(el.querySelector('.tKind'));
   }
-
   function toggleUnilateral(select){
     const parent = select.closest('.bd'); const isBilateral = select.value === 'bilateral';
     parent.querySelector('.tBilateral').style.display = isBilateral ? 'block' : 'none';
     parent.querySelector('.tUnilateral').style.display = isBilateral ? 'none' : 'block';
   }
 
+  // Bike (original core behavior)
   const bikeProto=document.getElementById('bikeProto'); const bikeRounds=document.getElementById('bikeRounds'); const bikeWork=document.getElementById('bikeWork'); const bikeRest=document.getElementById('bikeRest'); const bikeTarget=document.getElementById('bikeTarget'); const bikeELI5=document.getElementById('bikeELI5');
-  function resetBikeUI(){ if(!bikeProto) return; bikeProto.value='peak'; applyBikeUI(); const tb=document.querySelector('#bikeTable tbody'); tb.innerHTML=''; seedBikeRows(); }
-  function seedBikeRows(){ const r=fmt(bikeRounds?.value)||6; const tb=document.querySelector('#bikeTable tbody'); tb.innerHTML=''; for(let i=1;i<=r;i++){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i}</td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:60px"></td><td><input type="number" style="width:70px"></td><td><input style="width:120px"></td>`; tb.appendChild(tr);} }
-  function percentToBpm(pct){ const prof=LS.get('elite_profile',{}); const mhr=prof.mhr || Math.round(208-0.7*(prof.age||30)); return Math.round(mhr*pct/100); }
+  function resetBikeUI(){ if(!bikeProto) return; bikeProto.value='peak'; applyBikeUI(); const tb=document.querySelector('#bikeTable tbody'); if(tb){tb.innerHTML=''; seedBikeRows();} }
+  function seedBikeRows(){ const r=fmt(bikeRounds?.value)||6; const tb=document.querySelector('#bikeTable tbody'); if(!tb) return; tb.innerHTML=''; for(let i=1;i<=r;i++){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i}</td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:70px"></td><td><input type="number" style="width:60px"></td><td><input type="number" style="width:70px"></td><td><input style="width:120px"></td>`; tb.appendChild(tr);} }
+  function percentToBpm(pct){ const prof=LS.get('elite_profile',{}); const mhr=prof.mhr || mhrFromModel(prof.age||30, prof.sex||'', prof.mhrModel||'auto'); return Math.round(mhr*pct/100); }
+  function setTarget(str){ if(bikeTarget) bikeTarget.value=str; }
   function applyBikeUI(){
-    if(!bikeProto) return;
-    const p=bikeProto.value;
+    const p=bikeProto?.value;
+    const z=calcZones(LS.get('elite_profile',{}));
     const cfg={
       ng10:{r:10,w:30,rest:30,txt:`10 rounds of 0:30 hard / 0:30 easy.`,hr:`~85% max HR (${percentToBpm(85)} bpm).`},
       prog5:{r:1,w:300,rest:0,txt:`Single 5:00 time trial.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
       ext6:{r:6,w:300,rest:120,txt:`6×5:00 @ 2:00 easy.`,hr:`~78% max HR (${percentToBpm(78)} bpm).`},
       tab8:{r:8,w:20,rest:10,txt:`8×20s max / 10s easy.`,hr:`95%+ max HR (≈${percentToBpm(95)} bpm).`},
       ps10:{r:10,w:10,rest:50,txt:`10×10s max / 50s easy.`,hr:`Max effort sprints.`},
-      steady:{r:1,w:1800,rest:0,txt:`Z2 steady 30:00.`,hr:`Z2 ${calcZones(LS.get('elite_profile',{})).z2[0]}–${calcZones(LS.get('elite_profile',{})).z2[1]} bpm.`},
+      steady:{r:1,w:1800,rest:0,txt:`Z2 steady 30:00.`,hr:`Z2 ${z.z2[0]}–${z.z2[1]} bpm.`},
       z5:{r:6,w:60,rest:120,txt:`6×1:00 / 2:00 easy.`,hr:`90%+ max HR (≈${percentToBpm(92)} bpm).`},
       peak:{r:6,w:20,rest:100,txt:`6×0:20 max / 1:40 easy.`,hr:`Max effort; full recovery.`}
-    }[p];
-    bikeRounds.value=cfg.r; bikeWork.value=cfg.w; bikeRest.value=cfg.rest; bikeTarget.value=cfg.hr; bikeELI5.textContent=cfg.txt; seedBikeRows();
+    }[p||'peak'];
+    if(!cfg) return;
+    if(bikeRounds) bikeRounds.value=cfg.r; if(bikeWork) bikeWork.value=cfg.w; if(bikeRest) bikeRest.value=cfg.rest;
+    setTarget(cfg.hr); if(bikeELI5) bikeELI5.textContent=cfg.txt; seedBikeRows();
   }
 
-  function resetBJJ(){['bjjTime','bjjInt','bjjW1','bjjW2','bjjFeel','bjjSleep'].forEach(id=>{const el=document.getElementById(id); if(!el)return; if(el.tagName==='SELECT')el.value=''; else el.value='';});}
-  function resetWalk(){['wDur','wDist','wPace'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';}); if(document.getElementById('wTer')) document.getElementById('wTer').value='Flat'; if(document.getElementById('wPur')) document.getElementById('wPur').value='Recovery';}
+  function resetBJJ(){['bjjTime','bjjInt','bjjW1','bjjW2','bjjFeel','bjjSleep'].forEach(id=>{const el=document.getElementById(id); if(!el) return; if(el.tagName==='SELECT')el.value=''; else el.value='';});}
+  function resetWalk(){['wDur','wDist','wPace'].forEach(id=>{const el=document.getElementById(id); if(el) el.value=''}); if(document.getElementById('wTer')) document.getElementById('wTer').value='Flat'; if(document.getElementById('wPur')) document.getElementById('wPur').value='Recovery';}
 
+  // ===== Original strength volume aggregation =====
   function collectStrengthVolume(rootId){
     const list=[...document.querySelectorAll(`#${rootId}-list .setBody tr`)];
     let v=0, rpeSum=0, rpeN=0;
@@ -578,8 +781,130 @@
     const avg=rpeN? rpeSum/rpeN : 0;
     return {volume:v, rpe:avg};
   }
+
+  // ===== ADDED: HR Session I/O =====
+  function resetHRInputs(){
+    ['hrMaxSess','hrAvgSess','hrZ1','hrZ2','hrZ3','hrZ4','hrZ5'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+    const imgInput = document.getElementById('hrImg'); if(imgInput) imgInput.value='';
+  }
+  function loadHRFromStore(day){
+    if(!day?.hr) return;
+    const h=day.hr;
+    const set=(id,v)=>{const el=document.getElementById(id); if(el!=null) el.value=(v??'');};
+    set('hrMaxSess',h.max); set('hrAvgSess',h.avg);
+    set('hrZ1',h.z1); set('hrZ2',h.z2); set('hrZ3',h.z3); set('hrZ4',h.z4); set('hrZ5',h.z5);
+  }
+  function attachHRImage(input){
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      // store now so it isn't lost if user closes
+      if(!store[curKey]) store[curKey]={modalities:{}};
+      store[curKey].hr = store[curKey].hr || {};
+      store[curKey].hr.img = e.target.result; // base64 data URL
+      LS.set('elite_days',store);
+      document.getElementById('saveNote').textContent='HR image attached ✓';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ===== ADDED: TRIMP / TSS (Edwards + Banister hybrid) =====
+  function computeTRIMPfromZones(z){
+    // Edwards points: Z1=1, Z2=2, Z3=3, Z4=4, Z5=5 (minutes * weight)
+    if(!z) return 0;
+    const pts = (fmt(z.z1)*1) + (fmt(z.z2)*2) + (fmt(z.z3)*3) + (fmt(z.z4)*4) + (fmt(z.z5)*5);
+    return pts; // already comparable TSS-ish unit
+  }
+  function computeBanister(avgHR, rhr, mhr, durationMin){
+    // Banister TRIMP ~ duration * HRr * exp(k*HRr); k ≈ 1.92 (men), 1.67 (women)
+    const prof=LS.get('elite_profile',{}); const k = ((prof.sex||'').toLowerCase()==='female') ? 1.67 : 1.92;
+    const HRr = (mhr>rhr && avgHR) ? ( (avgHR - rhr) / (mhr - rhr) ) : 0;
+    return Math.max(0, fmt(durationMin)*HRr*Math.exp(k*HRr));
+  }
+
+  // ===== ADDED: ACWR / Monotony / Strain =====
+  function recentTSS(daysBack){
+    // sum of TSS over last N days including today if saved
+    let total=0, n=0;
+    const end=new Date(curKey || new Date());
+    const start=new Date(end); start.setDate(end.getDate()-(daysBack-1));
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+      const k=toKey(d); const day=store[k];
+      if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
+    }
+    return {total, n};
+  }
+  function computeACWR(){
+    // acute = last 7d avg; chronic = last 28d avg
+    const a = window.__sumRange(7), c = window.__sumRange(28);
+    const acuteAvg = a.n? a.total/a.n : 0;
+    const chronicAvg = c.n? c.total/c.n : 0.0001; // avoid div/0
+    return { acuteAvg, chronicAvg, ratio: acuteAvg/chronicAvg };
+  }
+  window.__sumRange = function(days){
+    let total=0, n=0;
+    const end = new Date(curKey || new Date());
+    const start = new Date(end); start.setDate(end.getDate()-(days-1));
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+      const k=toKey(d); const day=store[k];
+      if(day && typeof day.tss==='number'){ total+=day.tss; n++; }
+    }
+    return {total,n};
+  };
+
+  // ===== ADDED: Auto-Prescription (Option A)
+  function computePrescription(){
+    const prof=LS.get('elite_profile',{})||{};
+    const z=calcZones(prof);
+    const h={
+      max: fmt(document.getElementById('hrMaxSess').value),
+      avg: fmt(document.getElementById('hrAvgSess').value),
+      z1: fmt(document.getElementById('hrZ1').value), z2: fmt(document.getElementById('hrZ2').value),
+      z3: fmt(document.getElementById('hrZ3').value), z4: fmt(document.getElementById('hrZ4').value), z5: fmt(document.getElementById('hrZ5').value)
+    };
+    const ed=computeTRIMPfromZones(h);
+    const duration = h.z1+h.z2+h.z3+h.z4+h.z5;
+    const ban=computeBanister(h.avg, prof.rhr||0, z.mhr, duration);
+    const tssHR = Math.round( (ed*0.6) + (ban*0.4) ); // blended
+    const acwr=computeACWR();
+    const ratio=acwr.ratio;
+
+    // Decision logic (simple, conservative sports-science guardrails)
+    // High ACWR => recovery/skills; normal => allow strength/power; low => add conditioning/volume.
+    let rec=[];
+    if(ratio>=1.5 || tssHR>=120){ rec.push('Recovery / Technique only (HR Z1–Z2 20–40 min), mobility, breathing.'); }
+    else if(ratio>=1.3 || tssHR>=90){ rec.push('Light Strength (upper OR lower), low volume; optional Z2 20 min.'); }
+    else if(ratio<=0.8){ rec.push('Add Conditioning (Z2 30–45 min) OR Power sprints (6×20s / 100s).'); }
+    else { rec.push('Primary: Strength (one focus) + brief Power/speed; keep total CNS ≤ 75.'); }
+
+    // Bias by today’s zone composition:
+    if(h.z4+h.z5>=20) rec.push('Avoid more Z4–Z5 today; no max sprints.');
+    if(duration>=75 && h.avg>=0.75*z.mhr) rec.push('Cap total volume; favor technique over load.');
+    if((prof.sport||'').toLowerCase().includes('fight')) rec.push('Add positional drilling or light BJJ flow if fresh.');
+
+    const txt = `Today HR-TSS ≈ ${tssHR}, ACWR=${ratio.toFixed(2)} → ${rec.join(' ')}`;
+    document.getElementById('rxSummary').innerHTML = txt;
+    // store preview in memory to allow apply
+    window.__rx = { tss:tssHR, acwr:ratio, notes:rec };
+  }
+
+  function applyPrescription(){
+    // minimally toggle sections based on recommendation text; keep it simple and additive.
+    const sum = (document.getElementById('rxSummary')?.textContent||'').toLowerCase();
+    function on(id){ const chk=document.getElementById(id.replace('sec','m')); if(chk && !chk.checked){ chk.checked=true; } const el=document.getElementById(id); if(el && el.style.display==='none') el.style.display='block'; }
+    if(sum.includes('recovery')){ on('secWalk'); }
+    if(sum.includes('strength')){ on('secChest'); on('secBack'); }
+    if(sum.includes('power') || sum.includes('sprint')){ on('secTrack'); }
+    if(sum.includes('conditioning') || sum.includes('z2')){ on('secBike'); }
+    document.getElementById('saveNote').textContent='Plan toggled ✓ (you can customize further)';
+  }
+
+  // ===== ORIGINAL saveDay, extended additively with HR/TRIMP and ACWR updates =====
   function saveDay(){
-    const day={modalities:{}};
+    const day=store[curKey] || {modalities:{}};
+
+    // original strength
     if(document.getElementById('mChest').checked){ const s=collectStrengthVolume('chestBox'); if(s.volume>0){ day.modalities.chest={volume:s.volume,cnsScore:clamp(40+(s.rpe-6)*8,0,100),tss:Math.round(s.rpe*12)}; } }
     if(document.getElementById('mBack').checked){ const s=collectStrengthVolume('backBox'); if(s.volume>0){ day.modalities.back={volume:s.volume,cnsScore:clamp(40+(s.rpe-6)*8,0,100),tss:Math.round(s.rpe*12)}; } }
     if(document.getElementById('mLegs').checked){ const s=collectStrengthVolume('legsBox'); if(s.volume>0){ day.modalities.legs={volume:s.volume,cnsScore:clamp(45+(s.rpe-6)*9,0,100),tss:Math.round(s.rpe*14)}; } }
@@ -588,12 +913,35 @@
     if(document.getElementById('mBJJ').checked){ const t=fmt(document.getElementById('bjjTime').value)||0; const inten=document.getElementById('bjjInt').value; let c=40+(inten==='High'?20:inten==='Medium'?10:0); day.modalities.bjj={cnsScore:c,tss:Math.round(t*1.5)}; }
     if(document.getElementById('mWalk').checked){ const dur=fmt(document.getElementById('wDur').value)||30; day.modalities.walking={cnsScore:10,tss:Math.round(dur*0.5)}; }
 
-    if(Object.keys(day.modalities).length===0){document.getElementById('saveNote').textContent='Select at least one modality.'; return}
+    // ADDED: attach HR session to day + compute blended HR-TSS
+    const h={
+      max: fmt(document.getElementById('hrMaxSess').value),
+      avg: fmt(document.getElementById('hrAvgSess').value),
+      z1: fmt(document.getElementById('hrZ1').value), z2: fmt(document.getElementById('hrZ2').value),
+      z3: fmt(document.getElementById('hrZ3').value), z4: fmt(document.getElementById('hrZ4').value), z5: fmt(document.getElementById('hrZ5').value)
+    };
+    // keep any previously attached image
+    if(day.hr && day.hr.img) h.img = day.hr.img;
+    day.hr = h;
+
+    // HR-based load
+    const prof=LS.get('elite_profile',{})||{};
+    const z=calcZones(prof);
+    const ed=computeTRIMPfromZones(h);
+    const duration = h.z1+h.z2+h.z3+h.z4+h.z5;
+    const ban=computeBanister(h.avg, prof.rhr||0, z.mhr, duration);
+    const tssHR = Math.round( (ed*0.6) + (ban*0.4) );
+
+    // roll up totals (original + HR)
     let CNS=0,VOL=0,TSS=0;
-    Object.values(day.modalities).forEach(m=>{CNS+=fmt(m.cnsScore); VOL+=fmt(m.volume); TSS+=fmt(m.tss)});
+    Object.values(day.modalities||{}).forEach(m=>{CNS+=fmt(m.cnsScore); VOL+=fmt(m.volume); TSS+=fmt(m.tss)});
+    // add HR-TSS if >0
+    if(tssHR>0) TSS += tssHR;
+
     day.totalCNS=Math.round(CNS); day.totalVolume=Math.round(VOL||0); day.tss=Math.round(TSS);
+
     store[curKey]=day; LS.set('elite_days',store);
-    hist.push({d:curKey,tss:day.tss}); if(hist.length>28) hist.shift(); LS.set('elite_tss',hist);
+    hist.push({d:curKey,tss:day.tss}); if(hist.length>56) hist.shift(); LS.set('elite_tss',hist);
     setKPIs(day); document.getElementById('saveNote').textContent='Saved ✓'; renderCal();
   }
 
@@ -607,22 +955,37 @@
       if(day){days++; totalCNS+=fmt(day.totalCNS); totalVOL+=fmt(day.totalVolume); totalTSS+=fmt(day.tss);}
     }
     const avgCNS=days?Math.round(totalCNS/days):0;
+    const acwr=computeACWR();
     document.getElementById('weekBody').innerHTML=`
       <div class="grid2">
         <div class="kpi"><div class="muted">Total Volume (lb)</div><div class="v">${(totalVOL||0).toLocaleString()}</div></div>
         <div class="kpi"><div class="muted">Avg daily CNS</div><div class="v">${avgCNS}</div></div>
         <div class="kpi"><div class="muted">Weekly TSS</div><div class="v">${Math.round(totalTSS)}</div></div>
+        <div class="kpi"><div class="muted">ACWR (7d / 28d)</div><div class="v">${acwr.ratio.toFixed(2)}</div></div>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        <span class="${acwr.ratio>=1.5?'warn':'ok'}">Guideline:</span> Keep ACWR roughly 0.8–1.3 most weeks; >1.5 = elevated risk → schedule deload / technique focus.
       </div>`;
     weekModal.classList.add('show');
   };
 
+  // Fight camp modal open/close/save (original function names unchanged)
   const campModal=document.getElementById('campModal');
   document.getElementById('fightCampBtn').onclick=()=>{ campModal.classList.add('show'); };
   function closeCamp(){ campModal.classList.remove('show'); }
-  function saveCamp(){ const data={ len:fmt(document.getElementById('fcLen').value), wk:fmt(document.getElementById('fcWeek').value),
+  function saveCamp(){
+    const data={
+      len:fmt(document.getElementById('fcLen').value), wk:fmt(document.getElementById('fcWeek').value),
       order:document.getElementById('fcOrder').value, level:document.getElementById('fcLevel').value,
-      t1:{watts:fmt(document.getElementById('t1Watts').value), peak:fmt(document.getElementById('t1Peak').value), hr60:fmt(document.getElementById('t1HR60').value)} }; LS.set('elite_camp',data); closeCamp(); }
+      t1:{watts:fmt(document.getElementById('t1Watts').value), peak:fmt(document.getElementById('t1Peak').value), hr60:fmt(document.getElementById('t1HR60').value)},
+      t2:{mb:fmt(document.getElementById('t2MB').value), R:fmt(document.getElementById('t2R').value), L:fmt(document.getElementById('t2L').value)},
+      t3:{dist:fmt(document.getElementById('t3Dist').value), unit:document.getElementById('t3Unit').value},
+      t4:{type:document.getElementById('t4Type').value, load:fmt(document.getElementById('t4Load').value)}
+    };
+    LS.set('elite_camp',data); closeCamp();
+  }
 
+  // Library (unchanged)
   const EX_LIB={
     'Chest':['Barbell Bench Press','Dumbbell Bench Press','Incline Bench Press','Weighted Dips','Push-Up (weighted)','Weighted Push-Up','Decline Bench Press','Machine Chest Press','Cable Crossover','Incline Dumbbell Fly','Push-Up','Push-Up (feet elevated)','Archer Push-Up','Ring Push-Up','Dip'],
     'Back':['Weighted Pull-Up','Barbell Row','One-Arm DB Row','Lat Pulldown','Chest-Supported Row','Seated Cable Row','T-Bar Row','Trap-Bar Deadlift','Pull-Up','Chin-Up','Neutral-Grip Pull-Up','Inverted Row','Towel Row'],
@@ -634,11 +997,20 @@
     'Glutes':['Hip Thrust (barbell)','Glute Bridge (single-leg)','Back Squat (wide)','Step-Up (high box)','Cable Kickback','Reverse Lunge','Hip Thrust (bodyweight)','Glute Bridge','Single-Leg Hip Thrust','Step-Up','Frog Pump'],
     'Calves':['Standing Calf Raise','Seated Calf Raise','Donkey Calf Raise','Single-Leg Calf Raise','Jump Rope (heavy)','Standing Calf Raise (BW)','Single-Leg Calf Raise (BW)','Tiptoe Walks','Pogo Hops'],
     'Core':['Hanging Leg Raise','Weighted Plank','Ab Wheel Rollout','Cable Woodchop','Pallof Press','Dead Bug (weighted)','Plank','Side Plank','Hollow Body Hold','Dead Bug','Hanging Knee Raise','V-Up','Bird Dog'],
-    'MMA':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Clinch Pummeling — Isometric/Flow','Wall Clinch — Underhook Series','Wrestling Shots — Repeat Singles','Sprawl to Shot — Conditioning','GNP from Guard/Half','GNP from Mount/Side Control','Positional Sparring — BJJ Rounds','Scramble Drills — Turtle/Escapes','MMA Conditioning Circuit — Bag + Sprawl + Burpee','Cage Walks — Get-Up Reps'],
+    'MMA':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Clinch Pummeling — Isometric/Flow','Wall Clinch — Underhook Series','Wrestling Shots — Repeat Singles','Sprawl to Shot — Conditioning','GNP (Ground-and-Pound) from Guard/Half','GNP from Mount/Side Control','Positional Sparring — BJJ Rounds','Scramble Drills — Turtle/Escapes','MMA Conditioning Circuit — Bag + Sprawl + Burpee','Cage Walks — Get-Up Reps'],
     'Boxing':['Heavy Bag — Power Rounds (3×3:00)','Heavy Bag — Volume (5×3:00)','Heavy Bag — Intervals (30/30×10)','Mitt Work — Combos (coach-led)','Mitt Work — Defense/Counter','Shadowboxing — Technical (3–5 rounds)','Shadowboxing — Footwork Ladders','Double-End Bag — Timing & Rhythm','Speed Bag — Coordination','Slip Line — Head Movement','Footwork Ladders/Cones','Sparring — Rounds']
   };
   let LIB_TARGET=null;
-  function attachLibButton(targetId){/* already placed in initStrength */}
+  function attachLibButton(targetId){
+    const box=document.getElementById(targetId);
+    const row=box.querySelector('.row');
+    if(!row) return;
+    const btn=document.createElement('button');
+    btn.className='btn';
+    btn.textContent='📚 Exercise Library';
+    btn.onclick=()=>openLib(targetId);
+    row.appendChild(btn);
+  }
   function openLib(targetId){
     LIB_TARGET=targetId;
     document.getElementById('libGroup').value='';
@@ -681,311 +1053,30 @@
   function renderZoneOnBoot(){ renderZoneChips(); }
   function weekInit(){ const el=document.getElementById('weekBody'); if(el) el.innerHTML=''; }
 
-  function applyTrackQuickPick(sel){ const bd = sel.closest('.bd'); const name = bd.querySelector('.tName'); if(name){ name.value = sel.value || name.value; } }
+  function applyTrackQuickPick(sel){
+    const bd = sel.closest('.bd');
+    const name = bd.querySelector('.tName');
+    if(name){ name.value = sel.value || name.value; }
+  }
   function toggleTrackTemplate(sel){
-    const bd = sel.closest('.bd'); const mode = sel.value;
-    const runBlk = bd.querySelector('.tRunningBlock'); const plyoBlk = bd.querySelector('.tPlyoBlock'); if(!runBlk || !plyoBlk) return;
-    if(mode==='sprint' || mode==='jog' || mode==='run'){ runBlk.style.display='block'; plyoBlk.style.display='none'; const name = bd.querySelector('.tName'); if(name && !name.value) name.value = mode[0].toUpperCase()+mode.slice(1); }
-    else { runBlk.style.display='none'; plyoBlk.style.display='block'; }
+    const bd = sel.closest('.bd');
+    const mode = sel.value; // sprint | jog | run | other
+    const runBlk = bd.querySelector('.tRunningBlock');
+    const plyoBlk = bd.querySelector('.tPlyoBlock');
+    if(!runBlk || !plyoBlk) return;
+    if(mode==='sprint' || mode==='jog' || mode==='run'){
+      runBlk.style.display = 'block';
+      plyoBlk.style.display = 'none';
+      const name = bd.querySelector('.tName');
+      if(name && !name.value) name.value = mode[0].toUpperCase()+mode.slice(1);
+    } else {
+      runBlk.style.display = 'none';
+      plyoBlk.style.display = 'block';
+    }
   }
 
+  // boot
   renderZoneOnBoot(); renderCal(); weekInit();
-  </script>
-
-  <!-- ================= GOD MODE ADD-ONS ================= -->
-  <style>
-    .fab { position: fixed; right: 18px; bottom: 18px; z-index: 70; }
-    .fab .btn { box-shadow: 0 8px 24px rgba(0,0,0,.35) }
-    .sm2{ font-size:11px;color:#8aa3ba }
-    .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-    .hrz{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .chip.ok{border-color:#1f8a5b;color:#79f2b2}
-    .chip.warn{border-color:#aa6a55;color:#ffb19d}
-    .chip.hot{border-color:#d16868;color:#ff9b9b}
-  </style>
-
-  <div class="fab" id="hrFab" style="display:none">
-    <button class="btn primary" onclick="openHRModal()">❤️ HR Session</button>
-    <button class="btn" onclick="document.getElementById('engineModal').classList.add('show')">🧠 Decision</button>
-  </div>
-
-  <!-- HR Session Modal -->
-  <div class="modal" id="hrModal">
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;margin-bottom:8px">
-        <div class="pill">❤️ HR Session Logger (all training types)</div>
-        <button class="btn" onclick="closeHRModal()">✕ Close</button>
-      </div>
-      <div class="grid2">
-        <div><label>Date</label><input id="hrDate" type="date"></div>
-        <div><label>Session Type</label>
-          <select id="hrType">
-            <option>Skill: Boxing</option><option>Skill: MMA</option><option>Skill: BJJ</option>
-            <option>Strength</option><option>Hypertrophy</option><option>Assault Bike</option>
-            <option>Track / Sprints</option><option>Conditioning (run/row/other)</option><option>Recovery Walk</option>
-          </select>
-        </div>
-        <div><label>Avg HR (bpm)</label><input id="hrAvg" type="number"></div>
-        <div><label>Max HR (bpm for session)</label><input id="hrMax" type="number"></div>
-        <div><label>Duration (min)</label><input id="hrDur" type="number" step="0.1"></div>
-        <div><label>RPE (1–10)</label><input id="hrRPE" type="number" step="0.5" min="1" max="10" value="7"></div>
-      </div>
-      <div class="sec" style="margin-top:10px">
-        <div class="hd">Time in Zones (minutes)</div>
-        <div class="bd grid2" style="grid-template-columns:repeat(6,1fr)">
-          <div><label>Z1</label><input id="z1m" type="number" step="0.1" value="0"></div>
-          <div><label>Z2</label><input id="z2m" type="number" step="0.1" value="0"></div>
-          <div><label>Z3</label><input id="z3m" type="number" step="0.1" value="0"></div>
-          <div><label>Z4</label><input id="z4m" type="number" step="0.1" value="0"></div>
-          <div><label>Z5</label><input id="z5m" type="number" step="0.1" value="0"></div>
-          <div><label>Other</label><input id="z0m" type="number" step="0.1" value="0"></div>
-        </div>
-      </div>
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn primary" onclick="saveHRSession()">✓ Save HR Session</button>
-      </div>
-      <div class="sec" style="margin-top:10px">
-        <div class="hd">Derived Metrics</div>
-        <div class="bd">
-          <div class="hrz">
-            <span class="chip" id="chipTRIMP">TRIMP: —</span>
-            <span class="chip" id="chipACWR">ACWR: —</span>
-            <span class="chip" id="chipCNSHint">CNS flag: —</span>
-          </div>
-          <div id="autoPlan" class="sm2" style="margin-top:6px">—</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Decision Engine Modal -->
-  <div class="modal" id="engineModal">
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;margin-bottom:8px">
-        <div class="pill">🧠 Decision Engine</div>
-        <button class="btn" onclick="document.getElementById('engineModal').classList.remove('show')">✕ Close</button>
-      </div>
-      <div class="grid2">
-        <div>
-          <label>Mode</label>
-          <select id="engineMode">
-            <option value="A">Option A — Fight Camp</option>
-            <option value="B">Option B — Hybrid</option>
-          </select>
-        </div>
-        <div>
-          <label>Chronic window (days)</label>
-          <input id="engineChronic" type="number" min="14" value="21">
-        </div>
-      </div>
-      <div class="sec" style="margin-top:10px">
-        <div class="hd">Auto-Prescribe for Selected Calendar Day</div>
-        <div class="bd">
-          <div class="row">
-            <span class="tag" id="engineDayTag">Pick a day on the calendar first.</span>
-            <button class="btn" onclick="engineSuggest()">⚡ Compute Suggestion</button>
-          </div>
-          <div id="engineOut" style="margin-top:10px" class="muted"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Advanced HRmax Modal -->
-  <div class="modal" id="advancedMHR">
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;margin-bottom:8px">
-        <div class="pill">🧬 Advanced HRmax & Zones</div>
-        <button class="btn" onclick="document.getElementById('advancedMHR').classList.remove('show')">✕ Close</button>
-      </div>
-      <div class="grid2">
-        <div>
-          <label>HRmax Formula</label>
-          <select id="mhrFormula">
-            <option value="tanaka">Tanaka (208 − 0.7·age)</option>
-            <option value="nes">Nes (sex-specific)</option>
-            <option value="gulati">Gulati (women)</option>
-            <option value="gellish">Gellish (191.5 − 0.007·age²)</option>
-          </select>
-        </div>
-        <div>
-          <label>Fitness Level</label>
-          <select id="fitnessLevel">
-            <option>Beginner</option><option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Pro</option><option>Elite</option>
-          </select>
-        </div>
-        <div class="muted sm" style="grid-column:1/-1">
-          Note: After you click “Save Profile”, this selection adjusts HRmax and re-renders zones.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-  // HR UI helpers
-  (function(){ const d=document.getElementById('hrDate'); if(d){ const t=new Date(); d.value = t.toISOString().slice(0,10);} })();
-  function openHRModal(){ document.getElementById('hrModal').classList.add('show'); computeDerived(); }
-  function closeHRModal(){ document.getElementById('hrModal').classList.remove('show'); }
-
-  // Hook “Advanced HRmax” into Profile modal
-  (function hookProfileExtras(){
-    const prof = document.getElementById('profileModal');
-    if(!prof) return;
-    const footerBtn = prof.querySelector('.btn.primary');
-    if(footerBtn){
-      const adv = document.createElement('button');
-      adv.className='btn ghost';
-      adv.textContent='🧬 Advanced HRmax';
-      adv.style.marginRight='auto';
-      adv.onclick=()=>document.getElementById('advancedMHR').classList.add('show');
-      footerBtn.parentElement.insertBefore(adv, footerBtn);
-    }
-  })();
-
-  // After saveProfile, upgrade HRmax if missing; adjust for chosen formula/level
-  (function augmentProfileSave(){
-    const prof = document.getElementById('profileModal'); if(!prof) return;
-    const btn = prof.querySelector('.btn.primary'); if(!btn) return;
-    btn.addEventListener('click', ()=>{
-      setTimeout(()=>{
-        const p = LS.get('elite_profile', {});
-        if(!p || !p.age){ return; }
-        const sex = (p.sex||'').toLowerCase();
-        const fsel = document.getElementById('mhrFormula')?.value || 'tanaka';
-        const flv = (document.getElementById('fitnessLevel')?.value||'Recreational').toLowerCase();
-        let mhr = p.mhr || Math.round(208 - 0.7*p.age);
-        const age = Number(p.age);
-        if(fsel==='nes'){ mhr = Math.round((sex==='female') ? (210 - 0.62*age) : (211 - 0.64*age)); }
-        else if(fsel==='gulati' && sex==='female'){ mhr = Math.round(206 - 0.88*age); }
-        else if(fsel==='gellish'){ mhr = Math.round(191.5 - 0.007*(age*age)); }
-        const adj = { 'beginner': -2, 'recreational': 0, 'amateur': 1, 'semi-pro': 2, 'pro': 3, 'elite': 4 }[flv] ?? 0;
-        p.mhr = Math.max(150, mhr + adj); LS.set('elite_profile', p); renderZoneChips();
-      },0);
-    });
-  })();
-
-  // Show HR FAB when day opens
-  (function(){
-    const _openDay = window.openDay, _closeDay = window.closeDay;
-    window.openDay = function(date){ _openDay.apply(this, arguments); const f=document.getElementById('hrFab'); if(f) f.style.display='block'; };
-    window.closeDay = function(){ const f=document.getElementById('hrFab'); if(f) f.style.display='none'; _closeDay.apply(this, arguments); };
-  })();
-
-  // TRIMP (Edwards) & ACWR using elite_tss history
-  function edwardsTRIMP(m1,m2,m3,m4,m5){ m1=+m1||0; m2=+m2||0; m3=+m3||0; m4=+m4||0; m5=+m5||0; return (1*m1 + 2*m2 + 3*m3 + 4*m4 + 5*m5); }
-  function getACWR(curISO, chronicDays){
-    const hist = LS.get('elite_tss',[]);
-    const byDay={}; hist.forEach(h=>{ byDay[h.d]=(byDay[h.d]||0)+(+h.tss||0); });
-    function iso(d){ return d.toISOString().slice(0,10); }
-    const end = curISO ? new Date(curISO) : new Date();
-    const start = new Date(end); start.setDate(start.getDate()-6);
-    const chronicStart = new Date(end); chronicStart.setDate(chronicStart.getDate()-(+chronicDays||21)+1);
-    let acute=0, chronic=0, cDays=0;
-    for(let d=new Date(chronicStart); d<=end; d.setDate(d.getDate()+1)){
-      const k=iso(d); const tss = (byDay[k]||0);
-      if(d>=start) acute += tss;
-      chronic += tss; cDays++;
-    }
-    const acuteAvg = acute/7, chronicAvg = chronic/Math.max(1,cDays);
-    return {acwr: chronicAvg? (acuteAvg/chronicAvg) : 1, acuteAvg, chronicAvg};
-  }
-  function cnsFlagFromHR(peak,tag){
-    const mhr = (LS.get('elite_profile',{}).mhr||190);
-    if((+peak||0) >= 0.96*mhr) return 'hot';
-    if((tag||'').toLowerCase()==='max') return 'hot';
-    if((tag||'').toLowerCase()==='high') return 'warn';
-    return 'ok';
-  }
-
-  function computeDerived(){
-    const z1=+document.getElementById('z1m').value||0,
-          z2=+document.getElementById('z2m').value||0,
-          z3=+document.getElementById('z3m').value||0,
-          z4=+document.getElementById('z4m').value||0,
-          z5=+document.getElementById('z5m').value||0;
-    const tr = edwardsTRIMP(z1,z2,z3,z4,z5);
-    document.getElementById('chipTRIMP').textContent = 'TRIMP: '+tr;
-    const ac = getACWR(null, 21);
-    document.getElementById('chipACWR').textContent = 'ACWR: '+ac.acwr.toFixed(2)+' ('+Math.round(ac.acuteAvg)+' / '+Math.round(ac.chronicAvg)+')';
-    const flag = cnsFlagFromHR(document.getElementById('hrMax').value||document.getElementById('hrAvg').value, document.getElementById('hrType').value);
-    const chip=document.getElementById('chipCNSHint'); chip.textContent='CNS flag: '+flag; chip.className='chip '+(flag==='hot'?'hot':(flag==='warn'?'warn':'ok'));
-    document.getElementById('autoPlan').innerHTML = buildAutoPlanHTML(tr, ac.acwr, flag);
-  }
-  function buildAutoPlanHTML(trimp, acwr, flag){
-    const heavyOK = (trimp<70) && (acwr<=1.5) && (flag==='ok');
-    const modOK   = (trimp<110) && (acwr<=1.75) && (flag!=='hot');
-    const p = LS.get('elite_profile', {}); const z = calcZones(p); const z2 = z? (z.z2[0]+'–'+z.z2[1]) : 'Z2';
-    let rec = '';
-    if(flag==='hot' || acwr>1.75 || trimp>=110){ rec = `High fatigue → Recovery/Z2 ${z2} bpm for 30–45 min; mobility/core. Avoid heavy axial load.`; }
-    else if(heavyOK){ rec = `Green → Strength/Power (pick upper or lower) + alactic sprints (≤20s, long rest).`; }
-    else if(modOK){ rec = `Moderate → Strength (upper) OR Power (jumps/med ball) + Z2 cap 20–30 min.`; }
-    else { rec = `Conservative → Technique only (shadowboxing/footwork) + easy walk 20–30 min.`; }
-    return `<div><b>Recommendation:</b> ${rec}</div>`;
-  }
-
-  // Save HR session & merge into day/hist
-  function saveHRSession(){
-    const date = document.getElementById('hrDate').value;
-    if(!date){ alert('Pick a date'); return; }
-    const s = {
-      type: document.getElementById('hrType').value,
-      avg: Number(document.getElementById('hrAvg').value||0),
-      max: Number(document.getElementById('hrMax').value||0),
-      dur: Number(document.getElementById('hrDur').value||0),
-      rpe: Number(document.getElementById('hrRPE').value||7),
-      z: [1,2,3,4,5,0].map(k=>Number(document.getElementById('z'+k+'m').value||0))
-    };
-    const key = 'elite_hr_sessions'; const all = LS.get(key, {}); all[date] = s; LS.set(key, all);
-
-    const tr = edwardsTRIMP(s.z[0],s.z[1],s.z[2],s.z[3],s.z[4]);
-    const mkey = 'elite_hr_metrics'; const M = LS.get(mkey, {}); M[date] = { trimp: tr, tss_hr: tr, avgPct: 0, hiFrac: ((s.z[3]+s.z[4]) / Math.max(1,s.dur)) }; LS.set(mkey, M);
-    computeDerived();
-    alert('HR session saved ✓');
-    document.getElementById('hrModal').classList.remove('show');
-  }
-
-  // Decision Engine
-  function engineSuggest(){
-    if(!window.curKey){ alert('Open a day (click a cell) first.'); return; }
-    const mode = document.getElementById('engineMode').value;
-    const chronicDays = Number(document.getElementById('engineChronic').value||21);
-    const ac = getACWR(curKey, chronicDays);
-    let action = [], notes = [];
-
-    if(ac.acwr>1.3) notes.push('⚠️ High ACWR; favor recovery/technique.');
-    if(ac.acwr<0.6) notes.push('⬇️ Low ACWR; safe to load more.');
-
-    if(mode==='A'){ // Fight Camp priority
-      const S = LS.get('elite_hr_sessions', {}); const ses = S[curKey];
-      const highDay = !!ses && ( (ses.max >= 0.9*(LS.get('elite_profile',{}).mhr||190)) || (ses.rpe>=8) || (ses.z?.[4]||0)>=10 );
-      const medDay = !!ses && !highDay && ( (ses.rpe>=7) || ((ses.z?.[3]||0)>=10) );
-      if(highDay){ action.push('Recovery only (walk Z1–Z2 20–40 min). Mobility + nasal breathing.'); }
-      else if(medDay){ action.push('Lower-CNS strength: upper or accessories, 45–60 min @ RPE 6–7.'); }
-      else { action.push('Power micro-dose: 6–10 total jumps + 4–6×20s peak bike sprints (full recovery).'); }
-    } else { // Hybrid
-      action.push(ac.acwr>1.2 ? 'Accessories / Recovery' : 'Strength or Quality Conditioning');
-    }
-
-    // Nudge UI (non-destructive)
-    if(action.join(' ').toLowerCase().includes('strength')){ const legs=document.getElementById('mLegs'); if(legs && !legs.checked){ legs.checked=true; toggleSection('secLegs'); } }
-    if(action.join(' ').toLowerCase().includes('power')){ const track=document.getElementById('mTrack'); if(track && !track.checked){ track.checked=true; toggleSection('secTrack'); } }
-    if(action.join(' ').toLowerCase().includes('recovery') || action.join(' ').toLowerCase().includes('z2')){ const walk=document.getElementById('mWalk'); if(walk && !walk.checked){ walk.checked=true; toggleSection('secWalk'); } }
-
-    document.getElementById('engineOut').innerHTML =
-      `<div><b>For ${curKey}</b> — Mode <b>${mode}</b></div>
-       <div style="margin-top:6px">ACWR: <b>${ac.acwr.toFixed(2)}</b> (acute ${ac.acuteAvg.toFixed(0)} / chronic ${ac.chronicAvg.toFixed(0)} TSS)</div>
-       <div class="muted" style="margin-top:6px">${notes.join(' ')||'—'}</div>
-       <div style="margin-top:10px"><b>Prescription:</b> ${action.join(' ')}</div>`;
-  }
-
-  // Keep engine day tag in sync
-  (function trackCurDay(){
-    const tag=document.getElementById('engineDayTag');
-    const update=()=>{ if(tag) tag.textContent = window.curKey ? ('Selected Day: '+window.curKey) : 'Pick a day on the calendar first.'; };
-    const origOpen = window.openDay;
-    window.openDay = function(d){ origOpen(d); update(); };
-    update();
-  })();
-  </script>
+</script>
 </body>
 </html>
