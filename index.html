@@ -3041,15 +3041,13 @@ function startTrainingFromCalendar(dayKey){
 }
 
 function displayDaySchedule(dayKey){
-  // Check if this day has scheduled sessions
   const weekScheduleData = LS.get('elite_week_schedule', {});
   const dayData = weekScheduleData[dayKey];
   
   if(!dayData || !dayData.sessions || dayData.sessions.length === 0){
-    return; // No schedule to display
+    return;
   }
   
-  // Create schedule display in day modal
   const dayPanel = document.getElementById('dayPanel');
   const existingSchedule = document.getElementById('dayScheduleDisplay');
   if(existingSchedule) existingSchedule.remove();
@@ -3060,19 +3058,21 @@ function displayDaySchedule(dayKey){
   
   let html = '<div style="font-weight:700;color:var(--accent);margin-bottom:8px">📅 TODAY\'S SCHEDULE:</div>';
   
-  // Sort sessions by time
   const sortedSessions = dayData.sessions.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
   
-  sortedSessions.forEach(session => {
-    html += `<div style="padding:8px;margin:4px 0;background:#0a0e14;border-left:3px solid #00ccff;border-radius:4px">`;
-    html += `<div style="font-weight:700;color:#00ccff">${session.time || 'TBD'} - ${session.type || 'Training'}</div>`;
-    if(session.duration) html += `<div class="muted sm">Duration: ${session.duration} min</div>`;
+  sortedSessions.forEach((session, idx) => {
+    html += `<div style="padding:8px;margin:4px 0;background:#0a0e14;border-left:3px solid #00ccff;border-radius:4px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">`;
+    html += `<div style="flex:1;min-width:200px">`;
+    html += `<div style="font-weight:700;color:#00ccff;font-size:16px">${session.type || 'Training'}</div>`;
+    html += `<div class="muted sm">${session.time || 'TBD'} • Duration: ${session.duration} min</div>`;
+    if(session.intensity) html += `<div class="muted sm">Intensity: ${session.intensity}</div>`;
+    html += `</div>`;
+    html += `<button class="btn primary" onclick="startSpecificSession('${dayKey}', ${idx})" style="padding:10px 20px;font-size:13px;font-weight:700;white-space:nowrap">▶️ START TRAINING</button>`;
     html += `</div>`;
   });
   
   scheduleDiv.innerHTML = html;
   
-  // Insert at top of panel
   const firstKPI = dayPanel.querySelector('.row');
   if(firstKPI) firstKPI.before(scheduleDiv);
 }
