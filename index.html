@@ -2862,100 +2862,89 @@ function createInteractiveWorkout(workoutHTML, dayId){
 function finishTraining(){
   if(!currentTrainingDay) return;
   
-  // Collect all completed sets
   const logger = document.getElementById('trainingLoggerContent');
-  const allSets = logger.querySelectorAll('.set-check');
+  const isSkillSession = logger.querySelector('.round-check') !== null;
   
   let completedData = {
     day: currentTrainingDay,
     timestamp: new Date().toISOString(),
+    sessionType: window.currentSessionType || 'Unknown',
     exercises: []
   };
   
-  // Group sets by exercise
-  let currentEx = null;
-  allSets.forEach(checkbox => {
-    const block = checkbox.closest('.sec');
-    const exName = block.querySelector('.hd')?.textContent || 'Unknown';
-    const weight = checkbox.closest('.row').querySelector('.set-weight').value;
-    const reps = checkbox.closest('.row').querySelector('.set-reps').value;
-    const rpe = checkbox.closest('.row').querySelector('.set-rpe').value;
-    const checked = checkbox.checked;
+  if(isSkillSession){
+    const rounds = logger.querySelectorAll('.round-check');
+    let roundsData = [];
     
-    if(!currentEx || currentEx.name !== exName){
-      if(currentEx) completedData.exercises.push(currentEx);
-      currentEx = {name: exName, sets: []};
-    }
-    
-    if(checked && weight && reps){
-      currentEx.sets.push({
-        weight: parseFloat(weight),
-        reps: parseInt(reps),
-        rpe: parseFloat(rpe) || null
-      });
-    }
-  });
-  
-  if(currentEx) completedData.exercises.push(currentEx);
-  
-  // Save to localStorage
-  const dayKey = currentTrainingDay;
-  const dayData = store[dayKey] || {modalities: {}};
-  dayData.completedWorkout = completedData;
-  store[dayKey] = dayData;
-  LS.set('elite_days', store);
-  
-  // Calculate adaptive adjustments
-  calculateAdaptiveAdjustments(completedData);
-  
-  // Close modal
-  closeTrainingLogger();
-  alert(`Training saved! Completed ${completedData.exercises.length} exercises.`);
-}
-
-function calculateAdaptiveAdjustments(completedData){
-  // Analyze performance vs prescribed
-  completedData.exercises.forEach(ex => {
-    if(ex.sets.length === 0) return;
-    
-    // Calculate average RPE
-    const rpes = ex.sets.filter(s => s.rpe).map(s => s.rpe);
-    const avgRPE = rpes.length ? rpes.reduce((a,b) => a+b, 0) / rpes.length : 0;
-    
-    // Calculate total volume
-    const totalVolume = ex.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
-    
-    // Store progression data
-    const progressionKey = 'elite_progression';
-    let progression = LS.get(progressionKey, {});
-    if(!progression[ex.name]) progression[ex.name] = {history: []};
-    
-    progression[ex.name].history.push({
-      date: new Date().toISOString().split('T')[0],
-      sets: ex.sets.length,
-      avgWeight: ex.sets.reduce((sum, s) => sum + s.weight, 0) / ex.sets.length,
-      totalVolume: totalVolume,
-      avgRPE: avgRPE
+    rounds.forEach((checkbox, idx) => {
+      const roundDiv = checkbox.closest('div[style*="padding:12px"]');
+      const duration = roundDiv.querySelector('.round-duration')?.value || 5;
+      const intensity = roundDiv.querySelector('.round-intensity')?.value || '';
+      const rpe = roundDiv.querySelector('.round-rpe')?.value || '';
+      const notes = roundDiv.querySelector('.round-notes')?.value || '';
+      const completed = checkbox.checked;
+      
+      if(completed){
+        roundsData.push({
+          round: idx + 1,
+          duration: parseFloat(duration),
+          intensity: parseFloat(intensity) || null,
+          rpe: parseFloat(rpe) || null,
+          notes: notes
+        });
+      }
     });
     
-    // Keep only last 10 sessions
-    if(progression[ex.name].history.length > 10){
-      progression[ex.name].history.shift();
-    }
+    completedData.rounds = roundsData;
+    completedData.weightBefore = parseFloat(document.getElementById('skill-weight-before')?.value) || null;
+    completedData.weightAfter = parseFloat(document.getElementById('skill-weight-after')?.value) || null;
     
-    // Determine adjustment
-    if(avgRPE >= 9.5){
-      progression[ex.name].adjustment = 'decrease'; // Too hard
-    } else if(avgRPE <= 6){
-      progression[ex.name].adjustment = 'increase'; // Too easy
-    } else {
-      progression[ex.name].adjustment = 'maintain'; // Just right
-    }
+  } else {
+    const allSets = logger.querySelectorAll('.set-check');
+    let currentEx = null;
     
-    LS.set(progressionKey, progression);
-  });
+    allSets.forEach(checkbox => {
+      const block = checkbox.closest('.sec');
+      const exName = block.querySelector('.hd')?.textContent || 'Unknown';
+      const weight = checkbox.closest('.row').querySelector('.set-weight')?.value;
+      const reps = checkbox.closest('.row').querySelector('.set-reps')?.value;
+      const rpe = checkbox.closest('.row').querySelector('.set-rpe')?.value;
+      const checked = checkbox.checked;
+      
+      if(!currentEx || currentEx.name !== exName){
+        if(currentEx) completedData.exercises.push(currentEx);
+        currentEx = {name: exName, sets: []};
+      }
+      
+      if(checked && weight && reps){
+        currentEx.sets.push({
+          weight: parseFloat(weight),
+          reps: parseInt(reps),
+          rpe: parseFloat(rpe) || null
+        });
+      }
+    });
+    
+    if(currentEx) completedData.exercises.push(currentEx);
+  }
+  
+  const dayData = store[currentTrainingDay] || {modalities: {}};
+  if(!dayData.completedWorkouts) dayData.completedWorkouts = [];
+  dayData.completedWorkouts.push(completedData);
+  store[currentTrainingDay] = dayData;
+  LS.set('elite_days', store);
+  
+  if(!isSkillSession){
+    calculateAdaptiveAdjustments(completedData);
+  }
+  
+  closeTrainingLogger();
+  
+  const sessionType = isSkillSession ? 'skill session' : 'S&C workout';
+  const count = isSkillSession ? completedData.rounds?.length || 0 : completedData.exercises.length;
+  const unit = isSkillSession ? 'rounds' : 'exercises';
+  alert(`Training saved! Completed ${count} ${unit} in ${sessionType}.`);
 }
-
 function closeTrainingLogger(){
   document.getElementById('trainingLoggerModal').classList.remove('show');
   currentTrainingDay = null;
