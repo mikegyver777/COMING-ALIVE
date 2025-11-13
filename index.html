@@ -1204,6 +1204,7 @@ function applyPrescription(){
 function saveDay(){
   try{
     const day=store[curKey] || {modalities:{}};
+    const prof = LS.get('elite_profile',{}) || {};
 
    // Strength — use volume × RPE so load reflects tonnage AND effort
 
