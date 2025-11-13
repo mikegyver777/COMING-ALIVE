@@ -1065,7 +1065,34 @@ function collectStrengthVolume(rootId){
   const avg=rpeN? rpeSum/rpeN : 0;
   return {volume:v, rpe:avg};
 }
+// Strength load metrics: ties TSS & CNS to tonnage, RPE, and bodyweight
+function computeStrengthMetrics(volume, avgRPE, region, profile){
+  const prof = profile || {};
+  const bwLbs = fmt(prof.wt) || 180; // default bodyweight if unknown
+  const NL = (volume > 0 && bwLbs > 0) ? (volume / (bwLbs * 100)) : 0; // "normalized load"
 
+  // Region multipliers: legs > back > chest/upper
+  let k;
+  switch((region || '').toLowerCase()){
+    case 'legs':  k = 12; break;
+    case 'back':  k = 10; break;
+    default:      k = 9;  break; // chest / upper
+  }
+
+  let tss = 0;
+  let cns = 0;
+
+  if (NL > 0 && avgRPE > 0){
+    // TSS grows with normalized load and RPE, scaled so a big heavy session ~60–90 TSS
+    tss = k * NL * (avgRPE / 8);
+
+    // CNS: base 25 + extra from RPE + logarithmic bump from load
+    const loadBump = 6 * Math.log1p(NL); // log1p is gentle for very big days
+    cns = clamp(25 + 5 * (avgRPE - 5) + loadBump, 0, 100);
+  }
+
+  return { tss, cnsScore: cns };
+}
 /* ========= HR Session I/O ========= */
 function resetHRInputs(){
   ['hrMaxSess','hrAvgSess','hrZ1','hrZ2','hrZ3','hrZ4','hrZ5'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
