@@ -2990,18 +2990,7 @@ function addStartTrainingButtonToDay(dayKey){
   // Create START TRAINING button
   const dayPanel = document.getElementById('dayPanel');
   const headerRow = dayPanel?.querySelector('.row.no-print');
-  
-  if(headerRow){
-    const startBtn = document.createElement('button');
-    startBtn.id = 'calendarStartTrainingBtn';
-    startBtn.className = 'btn primary';
-    startBtn.style.cssText = 'padding:8px 16px;font-size:14px;font-weight:700;margin-right:8px';
-   
-    startBtn.onclick = () => startTrainingFromCalendar(dayKey);
-    
-    // Simply prepend to the row (add as first element)
-    headerRow.insertBefore(startBtn, headerRow.firstChild);
-  }
+
 }
 function startSpecificSession(dayKey, sessionIdx){
   const weekScheduleData = LS.get('elite_week_schedule', {});
