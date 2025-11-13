@@ -1208,35 +1208,41 @@ function saveDay(){
 
    // Strength — use volume × RPE so load reflects tonnage AND effort
 
-if (document.getElementById('mChest').checked) {
-  const s = collectStrengthVolume('chestBox');
-  if (s.volume > 0) {
-    // Roughly: ~10,000 lb at RPE 8 ≈ 100 TSS for upper body
-    const tss = Math.round((s.volume * (s.rpe / 8)) / 100);
-    const cns = clamp(30 + (s.rpe - 5) * 7, 0, 100);
-    day.modalities.chest = { volume: s.volume, cnsScore: cns, tss: tss };
-  }
-}
+if(document.getElementById('mChest').checked){
+      const s = collectStrengthVolume('chestBox');
+      if(s.volume>0){
+        const m = computeStrengthMetrics(s.volume, s.rpe, 'chest', prof);
+        day.modalities.chest = {
+          volume: s.volume,
+          cnsScore: m.cnsScore,
+          tss: Math.round(m.tss)
+        };
+      }
+    }
 
-if (document.getElementById('mBack').checked) {
-  const s = collectStrengthVolume('backBox');
-  if (s.volume > 0) {
-    const tss = Math.round((s.volume * (s.rpe / 8)) / 100);
-    const cns = clamp(30 + (s.rpe - 5) * 7, 0, 100);
-    day.modalities.back = { volume: s.volume, cnsScore: cns, tss: tss };
-  }
-}
+    if(document.getElementById('mBack').checked){
+      const s = collectStrengthVolume('backBox');
+      if(s.volume>0){
+        const m = computeStrengthMetrics(s.volume, s.rpe, 'back', prof);
+        day.modalities.back = {
+          volume: s.volume,
+          cnsScore: m.cnsScore,
+          tss: Math.round(m.tss)
+        };
+      }
+    }
 
-if (document.getElementById('mLegs').checked) {
-  const s = collectStrengthVolume('legsBox');
-  if (s.volume > 0) {
-    // Legs: higher typical tonnage → slightly higher reference volume
-    // ~14,000 lb at RPE 8 ≈ 100 TSS
-    const tss = Math.round((s.volume * (s.rpe / 8)) / 140);
-    const cns = clamp(35 + (s.rpe - 5) * 8, 0, 100);
-    day.modalities.legs = { volume: s.volume, cnsScore: cns, tss: tss };
-  }
-}
+    if(document.getElementById('mLegs').checked){
+      const s = collectStrengthVolume('legsBox');
+      if(s.volume>0){
+        const m = computeStrengthMetrics(s.volume, s.rpe, 'legs', prof);
+        day.modalities.legs = {
+          volume: s.volume,
+          cnsScore: m.cnsScore,
+          tss: Math.round(m.tss)
+        };
+      }
+    }
 
 // Conditioning modalities — let HR/TRIMP carry most of the metabolic load.
 // These are primarily CNS / tagging modifiers so we avoid double-counting TSS.
