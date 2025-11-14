@@ -3085,6 +3085,28 @@ function displayDaySchedule(dayKey){
 /* ========= Boot ========= */
 function renderZoneOnBoot(){ renderZoneChips(); }
 function weekInit(){ const el=document.getElementById('weekBody'); if(el) el.innerHTML=''; }
+  function startSessionFromSchedule(dayKey, sessionIdx){
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const daySchedule = weekScheduleData[dayKey];
+  
+  if(!daySchedule || !daySchedule.sessions || !daySchedule.sessions[sessionIdx]){
+    alert('Session not found');
+    return;
+  }
+  
+  const session = daySchedule.sessions[sessionIdx];
+  
+  if(session.type === 'Strength & Conditioning' && session.workout){
+    currentTrainingDay = dayKey;
+    const loggerContent = document.getElementById('trainingLoggerContent');
+    loggerContent.innerHTML = createInteractiveWorkout(session.workout, dayKey);
+    document.getElementById('trainingLoggerModal').classList.add('show');
+  }
+}
+
+function startSkillSession(dayKey, sessionIdx){
+  alert('Skill session timer/logger coming soon! For now, use external timer.');
+}
 renderZoneOnBoot(); renderCal(); weekInit();
 </script>
 </body>
