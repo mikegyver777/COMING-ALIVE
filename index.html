@@ -181,7 +181,7 @@
       <div class="sec">
         <div class="hd" style="display:flex;justify-content:space-between;align-items:center">
           <span>Training toggles (choose any)</span>
-          <button class="btn primary" id="quickStartTraining" style="padding:8px 16px;font-size:13px" onclick="quickStartDayTraining()">▶️ START TRAINING</button>
+         
         </div>
         <div class="bd">
           <div class="row">
@@ -2971,7 +2971,7 @@ function openDay(date){
   displayDaySchedule(curKey);
   
   // Check if this day has a saved workout and add START TRAINING button
-  addStartTrainingButtonToDay(curKey);
+  
   
   ['mChest','mBack','mLegs','mTrack','mBike','mBJJ','mWalk'].forEach(id=>document.getElementById(id).checked=false);
   ['secChest','secBack','secLegs','secTrack','secBike','secBJJ','secWalk'].forEach(id=>document.getElementById(id).style.display='none');
@@ -2984,7 +2984,7 @@ function openDay(date){
   dayModal.classList.add('show');
 }
 
-function addStartTrainingButtonToDay(dayKey){
+
   // Remove existing start training button if present
   const existing = document.getElementById('calendarStartTrainingBtn');
   if(existing) existing.remove();
