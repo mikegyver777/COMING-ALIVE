@@ -819,6 +819,51 @@ function saveProfile(){
 /* ========= DAY MODAL ========= */
 let curKey=null; const dayModal=document.getElementById('dayModal');
 function openDay(date){
+  function displayDaySchedule(dayKey){
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const dayData = weekScheduleData[dayKey];
+  
+  if(!dayData || !dayData.sessions || dayData.sessions.length === 0){
+    return;
+  }
+  
+  const dayPanel = document.getElementById('dayPanel');
+  const existingSchedule = document.getElementById('dayScheduleDisplay');
+  if(existingSchedule) existingSchedule.remove();
+  
+  const scheduleDiv = document.createElement('div');
+  scheduleDiv.id = 'dayScheduleDisplay';
+  scheduleDiv.style.cssText = 'margin-bottom:12px;padding:12px;background:#0d1714;border:1px solid var(--accent);border-radius:8px';
+  
+  let html = '<div style="font-weight:700;color:var(--accent);margin-bottom:8px">📅 TODAY\'S SCHEDULE:</div>';
+  
+  const sortedSessions = dayData.sessions.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+  
+  sortedSessions.forEach((session, idx) => {
+    html += `<div style="padding:8px;margin:4px 0;background:#0a0e14;border-left:3px solid #00ccff;border-radius:4px">`;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center">`;
+    html += `<div style="font-weight:700;color:#00ccff">${session.time || 'TBD'} - ${session.type || 'Training'}</div>`;
+    
+    if(session.type === 'Strength & Conditioning' && session.workout){
+      html += `<button class="btn primary" style="padding:6px 12px;font-size:12px" onclick="startSessionFromSchedule('${dayKey}', ${idx})">▶️ START</button>`;
+    } else {
+      html += `<button class="btn ghost" style="padding:6px 12px;font-size:12px">▶️ START</button>`;
+    }
+    
+    html += `</div>`;
+    if(session.duration) html += `<div class="muted sm">Duration: ${session.duration} min</div>`;
+    html += `</div>`;
+  });
+  
+  scheduleDiv.innerHTML = html;
+  
+  const firstKPI = dayPanel.querySelector('.row');
+  if(firstKPI) firstKPI.before(scheduleDiv);
+}
+
+function startSessionFromSchedule(dayKey, sessionIdx){
+  alert('Training logger coming soon!');
+}
   curKey=toKey(date);
   document.getElementById('dayTitle').textContent=date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   ['mChest','mBack','mLegs','mTrack','mBike','mBJJ','mWalk'].forEach(id=>document.getElementById(id).checked=false);
@@ -2964,6 +3009,7 @@ function closeTrainingLogger(){
 
 /* ========= Calendar Day View with Schedule ========= */
 function openDay(date){
+  displayDaySchedule(curKey);
   curKey=toKey(date);
   document.getElementById('dayTitle').textContent=date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   
@@ -2983,7 +3029,51 @@ function openDay(date){
   const saved=store[curKey]; if(saved){ setKPIs(saved); loadHRFromStore(saved); }
   dayModal.classList.add('show');
 }
+function displayDaySchedule(dayKey){
+  const weekScheduleData = LS.get('elite_week_schedule', {});
+  const dayData = weekScheduleData[dayKey];
+  
+  if(!dayData || !dayData.sessions || dayData.sessions.length === 0){
+    return;
+  }
+  
+  const dayPanel = document.getElementById('dayPanel');
+  const existingSchedule = document.getElementById('dayScheduleDisplay');
+  if(existingSchedule) existingSchedule.remove();
+  
+  const scheduleDiv = document.createElement('div');
+  scheduleDiv.id = 'dayScheduleDisplay';
+  scheduleDiv.style.cssText = 'margin-bottom:12px;padding:12px;background:#0d1714;border:1px solid var(--accent);border-radius:8px';
+  
+  let html = '<div style="font-weight:700;color:var(--accent);margin-bottom:8px">📅 TODAY\'S SCHEDULE:</div>';
+  
+  const sortedSessions = dayData.sessions.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+  
+  sortedSessions.forEach((session, idx) => {
+    html += `<div style="padding:8px;margin:4px 0;background:#0a0e14;border-left:3px solid #00ccff;border-radius:4px">`;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center">`;
+    html += `<div style="font-weight:700;color:#00ccff">${session.time || 'TBD'} - ${session.type || 'Training'}</div>`;
+    
+    if(session.type === 'Strength & Conditioning' && session.workout){
+      html += `<button class="btn primary" style="padding:6px 12px;font-size:12px" onclick="startSessionFromSchedule('${dayKey}', ${idx})">▶️ START</button>`;
+    } else {
+      html += `<button class="btn ghost" style="padding:6px 12px;font-size:12px">▶️ START</button>`;
+    }
+    
+    html += `</div>`;
+    if(session.duration) html += `<div class="muted sm">Duration: ${session.duration} min</div>`;
+    html += `</div>`;
+  });
+  
+  scheduleDiv.innerHTML = html;
+  
+  const firstKPI = dayPanel.querySelector('.row');
+  if(firstKPI) firstKPI.before(scheduleDiv);
+}
 
+function startSessionFromSchedule(dayKey, sessionIdx){
+  alert('Training logger coming soon!');
+}
 
   // Remove existing start training button if present
   const existing = document.getElementById('calendarStartTrainingBtn');
